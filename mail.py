@@ -17,6 +17,11 @@ def get_connection():
     return imap
 
 
+def get_new_mails_from(connection, from_email):
+    status, new_mails_ids = connection.search(None, f'(FROM {from_email} UNSEEN)')
+    return new_mails_ids
+
+
 def decode_mail_field(message, field):
     data, encoding = decode_header(message[field])[0]
     if encoding:

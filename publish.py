@@ -36,6 +36,7 @@ def login_to_site():
 
     wait = WebDriverWait(driver, 20)
     element = wait.until(EC.title_contains(SITE_USERNAME))
+    return driver
 
 
 def load_jpegs_to_site(driver, folder, jpegs):
@@ -46,6 +47,7 @@ def load_jpegs_to_site(driver, folder, jpegs):
         file_load_input = driver.find_element_by_id("edit-imce")
         file_load_input.send_keys(os.path.join(folder, filename))
         driver.find_element_by_id("edit-upload").click()
+        wait = WebDriverWait(driver, 20)
         element = wait.until(EC.presence_of_element_located((By.ID, filename)))
     sleep(1)
 
@@ -62,9 +64,10 @@ def update_rasp(driver, html):
     driver.get(SITE_RASP_URL)
     driver.find_element_by_id("wysiwyg-toggle-edit-body-und-0-value").click()
     driver.find_element_by_id("edit-body-und-0-value").clear()
-    driver.find_element_by_id("edit-body-und-0-value").send_keys(HTML)
+    driver.find_element_by_id("edit-body-und-0-value").send_keys(html)
     driver.find_element_by_id("edit-submit").click()
 
+    wait = WebDriverWait(driver, 20)
     wait.until(title_not_contains("Редактирование"))
     sleep(1)
 

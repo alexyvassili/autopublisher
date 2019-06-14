@@ -48,16 +48,16 @@ def replace_font_in_docx_xml(xml_name, old_font, new_font):
     with open(XML_NAME) as f:
         xml_string = f.read()
 
-if old_font not in xml_string:
-    raise ValueError(f"Font {old_font} not fount in document")
+    if old_font not in xml_string:
+        raise ValueError(f"Font {old_font} not fount in document")
 
-    xml_string = xml_string.replace(OLD_FONT, NEW_FONT)
+        xml_string = xml_string.replace(old_font, new_font)
 
-    with open(XML_NAME, 'w') as f:
-        f.write(xml_string)
+        with open(XML_NAME, 'w') as f:
+            f.write(xml_string)
 
 
-def add_cant_split_to_tr(tr: ElementTree.Element):
+def add_cant_split_to_tr(tr: ElementTree.Element,  NS, NS_PREFIX):
 
     if tr.tag != f"{NS_PREFIX}tr":
         raise ValueError("Function add_cant_split get non-tr tag or broken NAMESPACE")
@@ -74,14 +74,14 @@ def disable_table_split_in_docx_xml(xml_name):
     tree = ElementTree.parse(XML_NAME)
     root = tree.getroot()
 
-NAMESPACE = re.findall(r"\{(.*?)\}", root.tag)[0]
-NS = {'w': NAMESPACE, }
-NS_PREFIX = "{%s}" % NAMESPACE
-body = root.find('w:body', NS)
-table = body.find('w:tbl', NS)
-for tr in table.findall('w:tr', NS):
-    add_cant_split_to_tr(tr)
-tree.write(XML_NAME)
+    NAMESPACE = re.findall(r"\{(.*?)\}", root.tag)[0]
+    NS = {'w': NAMESPACE, }
+    NS_PREFIX = "{%s}" % NAMESPACE
+    body = root.find('w:body', NS)
+    table = body.find('w:tbl', NS)
+    for tr in table.findall('w:tr', NS):
+        add_cant_split_to_tr(tr, NS, NS_PREFIX)
+    tree.write(XML_NAME)
 
 
 def pack_docx(folder_from, docx_name):
@@ -105,5 +105,5 @@ def format_rasp_docx(docx, mail_folder):
     replace_font_in_docx_xml(XML_NAME, OLD_FONT, NEW_FONT)
     disable_table_split_in_docx_xml(XML_NAME)
     pack_docx(FORMATTED_FILENAME, WORD_TMP_DIR)
-    shutil.remove_tree(os.path.join(mail_folder, WORD_TMP_DIR))
+    shutil.rmtree(os.path.join(mail_folder, WORD_TMP_DIR))
     return FORMATTED_FILENAME
