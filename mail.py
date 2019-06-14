@@ -8,7 +8,7 @@ import shutil
 from secrets import MAIL_SERVER, MAIL_LOGIN, MAIL_PASSWORD
 
 
-def get_mail_connection():
+def get_connection():
     imap = imaplib.IMAP4_SSL(MAIL_SERVER)
     status, response = imap.login(MAIL_LOGIN, MAIL_PASSWORD)
     if status != 'OK':
@@ -51,7 +51,7 @@ def get_mail_metadata(message):
     return mail_metadata
 
 
-def get_mail_message(connection, mail_id):
+def get_message(connection, mail_id):
     response, mail_binary_data = connection.fetch(mail_id, '(RFC822)')
     assert response == "OK"
     message = email.message_from_bytes(mail_binary_data[0][1])
