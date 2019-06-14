@@ -41,7 +41,7 @@ def get_attachments_list(message):
             if encoding:
                 filename = bts.decode(encoding)
 
-        attachments.append(filename)
+            attachments.append(filename)
     return attachments
 
 
@@ -91,6 +91,10 @@ def save_email(message, mail_folder):
         counter += 1
         with open(os.path.join(mail_folder, filename), 'wb') as fp:
             fp.write(part.get_payload(decode=True))
+
+
+def mark_as_unread(connection, mail_id: bytes):
+    connection.store(mail_id, '-FLAGS', '(\Seen)')
 
 
 def close_connection(connection):

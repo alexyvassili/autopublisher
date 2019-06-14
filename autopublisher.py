@@ -13,6 +13,8 @@ if __name__ == "__main__":
     new_mails_ids = mail.get_new_mails_from(connection, MAIL_FROM)
 
     for mail_id in new_mails_ids:
+        if len(mail_id) == 0:
+            continue
         mail_folder = os.path.join(TMP_FOLDER, TMP_FOLDER_PREFIX + mail_id.decode())
         message = mail.get_message(connection, mail_id)
         mail_metadata = mail.get_mail_metadata(message)
@@ -26,8 +28,11 @@ if __name__ == "__main__":
                 pass
                 # html, jpegs = prepare_news(mail_metadata, mail_folder)
                 # publish_news(html, jpegs)
-        except Exception as e:
+        except BaseException as e:
             mail.mark_as_unread(connection, mail_id)
+            mail.close_connection(connection)
+            shutil.rmtree(mail_folder)
+            raise e
         shutil.rmtree(mail_folder)
         
     mail.close_connection(connection)

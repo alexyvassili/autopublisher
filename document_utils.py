@@ -6,7 +6,6 @@ import xml.etree.ElementTree as ElementTree
 
 WORD_TMP_DIR = 'word_tmp'
 FORMATTED_FILE = 'tmp_new_rasp.docx'
-FORMATTED_FILENAME = os.path.join(os.getcwd(), FORMATTED_FILE)
 
 XML_NAME = os.path.join(WORD_TMP_DIR, 'word', 'document.xml')
 
@@ -45,16 +44,16 @@ def unpack_docx(docx, folder):
 
 
 def replace_font_in_docx_xml(xml_name, old_font, new_font):
-    with open(XML_NAME) as f:
+    with open(xml_name) as f:
         xml_string = f.read()
 
     if old_font not in xml_string:
         raise ValueError(f"Font {old_font} not fount in document")
 
-        xml_string = xml_string.replace(old_font, new_font)
+    xml_string = xml_string.replace(old_font, new_font)
 
-        with open(XML_NAME, 'w') as f:
-            f.write(xml_string)
+    with open(xml_name, 'w') as f:
+        f.write(xml_string)
 
 
 def add_cant_split_to_tr(tr: ElementTree.Element,  NS, NS_PREFIX):
@@ -71,7 +70,7 @@ def add_cant_split_to_tr(tr: ElementTree.Element,  NS, NS_PREFIX):
 
 
 def disable_table_split_in_docx_xml(xml_name):
-    tree = ElementTree.parse(XML_NAME)
+    tree = ElementTree.parse(xml_name)
     root = tree.getroot()
 
     NAMESPACE = re.findall(r"\{(.*?)\}", root.tag)[0]
@@ -81,17 +80,17 @@ def disable_table_split_in_docx_xml(xml_name):
     table = body.find('w:tbl', NS)
     for tr in table.findall('w:tr', NS):
         add_cant_split_to_tr(tr, NS, NS_PREFIX)
-    tree.write(XML_NAME)
+    tree.write(xml_name)
 
 
-def pack_docx(folder_from, docx_name):
+def pack_docx(docx_name, folder_from):
     if not os.path.exists(folder_from):
         raise ValueError(f"Cant't found docx folder: {folder_from}")
     if os.path.exists(docx_name):
         raise ValueError(f"Docx file is already exists: {docx_name}")
 
-    zipf = zipfile.ZipFile(FORMATTED_FILE, 'w', zipfile.ZIP_DEFLATED)
-    with cd(WORD_TMP_DIR):
+    zipf = zipfile.ZipFile(docx_name, 'w', zipfile.ZIP_DEFLATED)
+    with cd(folder_from):
         for item in os.listdir('.'):
             if not os.path.isfile(os.path.join(item)):
                 zipdir(item, zipf)
@@ -101,9 +100,11 @@ def pack_docx(folder_from, docx_name):
 
 
 def format_rasp_docx(docx, mail_folder):
-    unpack_docx(docx, os.path.join(mail_folder,WORD_TMP_DIR))
-    replace_font_in_docx_xml(XML_NAME, OLD_FONT, NEW_FONT)
-    disable_table_split_in_docx_xml(XML_NAME)
-    pack_docx(FORMATTED_FILENAME, WORD_TMP_DIR)
+    unpack_docx(os.path.join(mail_folder, docx), os.path.join(mail_folder, WORD_TMP_DIR))
+    xml_full_name = os.path.join(mail_folder, XML_NAME)
+    formatted_filename = os.path.join(mail_folder, FORMATTED_FILE)
+    replace_font_in_docx_xml(xml_full_name, OLD_FONT, NEW_FONT)
+    disable_table_split_in_docx_xml(xml_full_name)
+    pack_docx(formatted_filename, os.path.join(mail_folder, WORD_TMP_DIR))
     shutil.rmtree(os.path.join(mail_folder, WORD_TMP_DIR))
-    return FORMATTED_FILENAME
+    return formatted_filename

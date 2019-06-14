@@ -2,7 +2,7 @@ import os
 import subprocess
 from datetime import datetime
 
-from document_utils import format_rasp_docx
+from document_utils import format_rasp_docx, cd
 
 SOFFICE_PATH = "/opt/libreoffice6.2/program/soffice"
 
@@ -38,12 +38,14 @@ def prepare_rasp(mail_folder):
     if not os.path.exists(formatted_docx_name):
         raise PrepareException(f"Can't find formatted docx: {formatted_docx_name}")
 
-    subprocess.call([SOFFICE_PATH, '--headless', '--convert-to', 'pdf', formatted_docx_name])
-    PDF_NAME = formatted_docx_name.split('.')[0] + '.pdf'
-    if not os.path.exists(PDF_NAME):
-        raise PrepareException(f"Can't find formatted pdf: {formatted_docx_name}")
-    subprocess.call(['convert', '-density', '300', PDF_NAME, '-quality', '100', JPG_NAME])
-    jpegs = [item for item in os.listdir(mail_folder) if  item.endswith('jpg')]
+    with cd(mail_folder):
+        subprocess.call([SOFFICE_PATH, '--headless', '--convert-to', 'pdf', formatted_docx_name])
+        PDF_NAME = formatted_docx_name.split('.')[0] + '.pdf'
+        if not os.path.exists(PDF_NAME):
+            raise PrepareException(f"Can't find formatted pdf: {formatted_docx_name}")
+        subprocess.call(['convert', '-density', '300', PDF_NAME, '-quality', '100', JPG_NAME])
+    jpegs = [item for item in os.listdir(mail_folder) if item.endswith('jpg')]
+    jpegs.sort()
 
     if not jpegs:
         raise PrepareException('Can\'t find rasp jpegs')
