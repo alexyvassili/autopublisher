@@ -64,13 +64,15 @@ def prepare_jpegs_for_news(jpegs, folder, jpegs_folder):
     os.mkdir(jpegs_folder)
     formatted_names_jpegs = {jpeg: format_jpeg_name(jpeg) for jpeg in jpegs}
     for jpeg in jpegs:
-        size = get_file_size_mb(jpeg)
-        new_jpeg_name = formatted_names_jpegs[jpeg]
+        jpeg_fullname = os.path.join(folder, jpeg)
+        size = get_file_size_mb(jpeg_fullname)
+        new_jpeg = formatted_names_jpegs[jpeg]
+        new_jpeg_fullname = os.path.join(jpegs_folder, new_jpeg)
         if size > 1.5:
-            resize_jpeg_on_wide_size(jpeg, new_jpeg_name, WIDE_SIDE_IMAGE)
+            resize_jpeg_on_wide_size(jpeg_fullname, new_jpeg_fullname, WIDE_SIDE_IMAGE)
         else:
-            shutil.copyfile(jpeg, new_jpeg_name)
-        jpegs_for_news.append(new_jpeg_name)
+            shutil.copyfile(jpeg_fullname, new_jpeg_fullname)
+        jpegs_for_news.append(new_jpeg_fullname)
     return jpegs_for_news
 
 
@@ -106,7 +108,7 @@ def get_html_news_from_docx(docx):
 
 
 def news(mail_metadata, mail_folder):
-    jpegs = [os.path.join(mail_folder, item) for item in get_files_for_extension(mail_folder, 'jpg')]
+    jpegs = [item for item in get_files_for_extension(mail_folder, 'jpg')]
     if not jpegs:
         raise PrepareError('Can\'t publish news without images')
 

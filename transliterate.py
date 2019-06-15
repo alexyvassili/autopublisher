@@ -88,5 +88,5 @@ def transliterate(string):
 
 
 def replace_non_alphabetic_symbols(string):
-    string = re.sub(r'\W', '_', string)
+    string = re.sub(r'[^0-9A-z.]', '_', string)
     return string
