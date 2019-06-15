@@ -76,7 +76,7 @@ def prepare_jpegs_for_news(jpegs, folder, jpegs_folder):
     return jpegs_for_news
 
 
-def prepare_html_for_news(mail_metadata, mail_folder):
+def prepare_html_for_news(mail_folder):
     docxs = get_fullpath_files_for_extension(mail_folder, 'docx')
     if not docxs:
         # title, html = get_html_news_from_mail_body(mail_metadata['Body'])
@@ -107,13 +107,30 @@ def get_html_news_from_docx(docx):
     return title, news_html
 
 
-def news(mail_metadata, mail_folder):
-    jpegs = [item for item in get_files_for_extension(mail_folder, 'jpg')]
+def news(mail_folder):
+    jpegs = get_files_for_extension(mail_folder, 'jpg')
     if not jpegs:
         raise PrepareError('Can\'t publish news without images')
 
     jpegs_for_news = prepare_jpegs_for_news(jpegs, mail_folder,
                                             os.path.join(mail_folder, IMG_FOR_NEWS_FOLDER))
 
-    title, html = prepare_html_for_news(mail_metadata, mail_folder)
+    title, html = prepare_html_for_news(mail_folder)
     return title, html, jpegs_for_news
+
+
+def news_folder(mail_folder):
+    """Prepare new materials from .doc or .zip/.rar
+        or break execution"""
+    extensions = ['jpeg', 'rar', 'zip', 'doc', 'docx']
+    profiles = [{'jpeg': 'many', 'rar': 0, 'zip': 0, 'doc': 0, 'docx': 1},  # новость в docx
+                {'jpeg': 'many', 'rar': 0, 'zip': 0, 'doc': 1, 'docx': 0},  # новость в doc
+                {'jpeg': 'many', 'rar': 0, 'zip': 0, 'doc': 0, 'docx': 0},  # новость в теле письма
+                {'jpeg': 0, 'rar': 1, 'zip': 0, 'doc': 0, 'docx': 0},  # новость в архиве rar
+                {'jpeg': 0, 'rar': 0, 'zip': 1, 'doc': 0, 'docx': 0},  # новость в архиве zip
+                ]
+    counts = {}
+    for ext in extensions:
+        counts[ext] = get_files_for_extension(mail_folder, ext)
+
+

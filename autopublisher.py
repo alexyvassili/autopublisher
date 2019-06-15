@@ -25,7 +25,8 @@ if __name__ == "__main__":
                 jpegs = prepare.rasp(mail_folder)
                 publish.rasp(mail_folder, jpegs)
             else:
-                title, html, jpegs = prepare.news(mail_metadata, mail_folder)
+                prepare.news_folder(mail_folder)
+                title, html, jpegs = prepare.news(mail_folder)
                 publish.news(title, html, jpegs)
         except BaseException as e:
             mail.mark_as_unread(connection, mail_id)

@@ -61,7 +61,7 @@ def replace_font_in_docx_xml(xml_name, old_font, new_font):
 
 
 def add_cant_split_to_tr(tr: ElementTree.Element,  NS, NS_PREFIX):
-
+    """Запрещает перенос строк на другую страницу в таблице в вордовском документе"""
     if tr.tag != f"{NS_PREFIX}tr":
         raise ValueError("Function add_cant_split get non-tr tag or broken NAMESPACE")
     trpr = tr.find('w:trPr', NS)
