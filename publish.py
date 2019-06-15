@@ -72,9 +72,32 @@ def update_rasp(driver, html):
     sleep(1)
 
 
-def publish_rasp(mail_folder, jpegs):
+def rasp(mail_folder, jpegs):
     driver = login_to_site()
     load_jpegs_to_site(driver, mail_folder, jpegs)
     html = create_rasp_html(jpegs)
     update_rasp(driver, html)
+    driver.close()
+
+
+def news(title, html, jpegs):
+    driver = login_to_site()
+    wait = WebDriverWait(driver, 20)
+    driver.get(SITE_NEWS_URL)
+    driver.find_element_by_id("edit-title").send_keys(title)
+    driver.find_element_by_id("wysiwyg-toggle-edit-body-und-0-value").click()
+    driver.find_element_by_id("edit-body-und-0-value").send_keys(html)
+
+    file_uploader_id = "edit-field-image-und-{}-upload"
+    file_uploader_btn = "edit-field-image-und-{}-upload-button"
+
+    for j, filename in enumerate(jpegs):
+        driver.find_element_by_id(file_uploader_id.format(j)).send_keys(filename)
+        driver.find_element_by_id(file_uploader_btn.format(j)).click()
+        wait.until(EC.presence_of_element_located((By.ID, file_uploader_id.format(j + 1))))
+
+    driver.find_element_by_id("edit-submit").click()
+
+    wait.until(title_not_contains("Создание материала"))
+    sleep(1)
     driver.close()

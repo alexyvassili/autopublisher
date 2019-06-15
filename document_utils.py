@@ -2,7 +2,11 @@ import os
 import re
 import shutil
 import zipfile
+import mammoth
 import xml.etree.ElementTree as ElementTree
+from PIL import Image
+from io import BytesIO
+from subprocess import call
 
 WORD_TMP_DIR = 'word_tmp'
 FORMATTED_FILE = 'tmp_new_rasp.docx'
@@ -108,3 +112,33 @@ def format_rasp_docx(docx, mail_folder):
     pack_docx(formatted_filename, os.path.join(mail_folder, WORD_TMP_DIR))
     shutil.rmtree(os.path.join(mail_folder, WORD_TMP_DIR))
     return formatted_filename
+
+
+def get_image_size(image_filename):
+    with open(image_filename, 'rb') as f:
+        image_file = BytesIO(f.read())
+    image = Image.open(image_file)
+    width, height = image.size
+    return width, height
+
+
+def get_resized_image_size(width, height, wide_side):
+    wide = max(width, height)
+    coef = wide / wide_side
+    return int(width/coef), int(height/coef)
+
+
+def resize_jpeg_on_wide_size(jpeg, new_jpeg, wide_side_size):
+    """Ресайз картинки с определенным размером по широкой стороне"""
+    width, height = get_image_size(jpeg)
+    m_width, m_height = get_resized_image_size(width, height, wide_side=wide_side_size)
+
+    call(["convert", jpeg, "-resize", str(m_width), "-quality", "100", new_jpeg])
+
+
+def docx2html(docx):
+    with open(docx, "rb") as docx_file:
+        result = mammoth.convert_to_html(docx_file)
+        html = result.value  # The generated HTML
+        messages = result.messages  # Any messages, such as warnings during conversion
+    return html, messages

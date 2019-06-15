@@ -2,8 +2,8 @@ import os
 import shutil
 
 import mail
-from prepare import prepare_rasp
-from publish import publish_rasp
+import prepare
+import publish
 from settings import TMP_FOLDER, TMP_FOLDER_PREFIX
 from secrets import MAIL_FROM
 
@@ -22,12 +22,11 @@ if __name__ == "__main__":
 
         try:
             if 'расписание' in mail_metadata['Subject'].lower():
-                jpegs = prepare_rasp(mail_folder)
-                publish_rasp(mail_folder, jpegs)
+                jpegs = prepare.rasp(mail_folder)
+                publish.rasp(mail_folder, jpegs)
             else:
-                pass
-                # html, jpegs = prepare_news(mail_metadata, mail_folder)
-                # publish_news(html, jpegs)
+                title, html, jpegs = prepare.news(mail_metadata, mail_folder)
+                publish.news(title, html, jpegs)
         except BaseException as e:
             mail.mark_as_unread(connection, mail_id)
             mail.close_connection(connection)
