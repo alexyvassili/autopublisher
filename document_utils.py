@@ -37,6 +37,19 @@ def zipdir(path, ziph):
             ziph.write(os.path.join(root, file))
 
 
+def unzip_without_structure(zip_name, folder):
+    with zipfile.ZipFile(zip_name, 'r') as zip_ref:
+        for member in zip_ref.namelist():
+            filename = os.path.basename(member)
+            # skip directories
+            if not filename:
+                continue
+
+            # copy file (taken from zipfile's extract)
+            with zip_ref.open(member) as source, open(os.path.join(folder, filename), "wb") as target:
+                shutil.copyfileobj(source, target)
+
+
 def unpack_docx(docx, folder):
     if os.path.exists(folder):
         raise ValueError(f'Folder {folder} is already exists')
