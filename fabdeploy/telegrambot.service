@@ -1,0 +1,12 @@
+[Unit]
+Description=Lexa Telegram Bot service
+After=multi-user.target
+
+[Service]
+ExecStart=
+Type=notify
+NotifyAccess=all
+KillSignal=SIGQUIT
+
+[Install]
+WantedBy=multi-user.target
