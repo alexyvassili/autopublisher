@@ -2,6 +2,7 @@ import os
 from time import sleep
 
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -10,6 +11,9 @@ from selenium.webdriver.common.by import By
 
 from secrets import *
 from settings import *
+
+options = Options()
+options.headless = SELENIUM_HEADLESS
 
 
 class title_not_contains(object):
@@ -25,7 +29,7 @@ class title_not_contains(object):
 
 
 def login_to_site():
-    driver = webdriver.Firefox()
+    driver = webdriver.Firefox(options=options)
     driver.get(SITE_LOGIN_URL)
     assert "Лотошино" in driver.title
     name_input = driver.find_element_by_id('edit-name')

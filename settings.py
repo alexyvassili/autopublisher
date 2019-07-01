@@ -1,5 +1,7 @@
 from secrets import SITE_DOMAIN
 
+SELENIUM_HEADLESS = True
+
 TMP_FOLDER = "/tmp"
 TMP_FOLDER_PREFIX = "autopublisher_"
 
