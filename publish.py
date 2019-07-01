@@ -77,7 +77,9 @@ def rasp(mail_folder, jpegs):
     load_jpegs_to_site(driver, mail_folder, jpegs)
     html = create_rasp_html(jpegs)
     update_rasp(driver, html)
+    url = driver.current_url
     driver.close()
+    return url
 
 
 def news(title, html, jpegs):
@@ -100,4 +102,6 @@ def news(title, html, jpegs):
 
     wait.until(title_not_contains("Создание материала"))
     sleep(1)
+    url = driver.current_url
     driver.close()
+    return url
