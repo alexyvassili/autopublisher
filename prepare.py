@@ -30,7 +30,7 @@ def check_rasp_folder(folder):
 
 
 def rasp(mail_folder):
-    RASP_NAME = 'rasp_' + datetime.today().strftime('%Y-%m-%d')
+    RASP_NAME = 'rasp_' + datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
     JPG_NAME = os.path.join(mail_folder, RASP_NAME + '.jpg')
 
     # rasp folder must contain only one .docx and no jpegs
