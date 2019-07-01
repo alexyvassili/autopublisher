@@ -23,15 +23,26 @@ def owner_only(bot_handler):
 
 
 class MailCheckFilter(BaseFilter):
-    name = 'Filters.mail'
-
     def filter(self, message):
         return 'проверь почту' in message.text.lower().strip()
+
+
+class HelloFilter(BaseFilter):
+    hi_messages = ["привет", "здоров"]
+
+    def filter(self, message):
+        msg = message.text.lower().strip()
+        return any([text in msg for text in self.hi_messages])
 
 
 def hello(bot, update):
     update.message.reply_text(
         'Hello {}'.format(update.message.from_user.first_name))
+
+
+def hello_msg(bot, update):
+    update.message.reply_text(
+        'Здорово, {}!'.format(update.message.from_user.first_name))
 
 
 @owner_only
@@ -61,10 +72,12 @@ updater = Updater(token=BOT_TOKEN, request_kwargs=BOT_PROXY)
 start_handler = CommandHandler('start', start)
 hello_handler = CommandHandler('hello', hello)
 mail_handler = MessageHandler(MailCheckFilter(), mail_check)
+hello_msg_handler = MessageHandler(HelloFilter(), hello_msg)
 any_handler = MessageHandler(Filters.all, any_answer)  # Заглушка на всё остальное
 
 updater.dispatcher.add_handler(start_handler)
 updater.dispatcher.add_handler(hello_handler)
+updater.dispatcher.add_handler(hello_msg_handler)
 updater.dispatcher.add_handler(mail_handler)
 updater.dispatcher.add_handler(any_handler)
 
