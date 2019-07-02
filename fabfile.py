@@ -93,7 +93,7 @@ def install_system_libs():
 
 
 def install_libreoffice():
-    if not exists(SOFFICE_PATH) or True:
+    if not exists(SOFFICE_PATH):
         run('wget http://download.documentfoundation.org/libreoffice/stable/6.2.4/deb/x86_64/LibreOffice_6.2.4_Linux_x86-64_deb.tar.gz -O /tmp/libreoffice.tar.gz')
         run('mkdir /tmp/libreoffice_setup')
         # распаковываем все файлы без сохранения структуры директорий
@@ -117,10 +117,11 @@ def get_src():
 
 
 def set_secrets():
-    upload_template(
-        os.path.join(env.PROJECT_NAME, 'secrets.py'),
-        os.path.join(env.REMOTE_PROJECT_PATH, env.PROJECT_NAME)
-    )
+    # upload_template(
+    #     os.path.join(env.PROJECT_NAME, 'secrets.py'),
+    #     os.path.join(env.REMOTE_PROJECT_PATH, env.PROJECT_NAME)
+    # )
+    upload_template('secrets.py', env.REMOTE_PROJECT_PATH)
 
 
 def create_virtualenv():

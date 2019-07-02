@@ -5,7 +5,7 @@ After=multi-user.target
 [Service]
 WorkingDirectory=/var/www/autopublisher
 ExecStart=/var/pyvenvs/autopublisher/bin/python3 /var/www/autopublisher/telegrambot.py
-Type=notify
+Type=simple
 NotifyAccess=all
 KillSignal=SIGQUIT
 
