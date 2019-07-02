@@ -93,12 +93,12 @@ def install_system_libs():
 
 
 def install_libreoffice():
-    if not exists(SOFFICE_PATH):
+    if not exists(SOFFICE_PATH) or True:
         run('wget http://download.documentfoundation.org/libreoffice/stable/6.2.4/deb/x86_64/LibreOffice_6.2.4_Linux_x86-64_deb.tar.gz -O /tmp/libreoffice.tar.gz')
         run('mkdir /tmp/libreoffice_setup')
         # распаковываем все файлы без сохранения структуры директорий
         run('tar xvzf /tmp/libreoffice.tar.gz -C /tmp/libreoffice_setup/ --strip-components 2')
-        sudo('dpkg -i /tmp/libreoffice_setup/*')
+        sudo('dpkg -i /tmp/libreoffice_setup/*.deb')
         run('rm /tmp/libreoffice_setup/*')
         run('rmdir /tmp/libreoffice_setup')
         run('rm /tmp/libreoffice.tar.gz')

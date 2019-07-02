@@ -3,7 +3,8 @@ Description=Lexa Telegram Bot service
 After=multi-user.target
 
 [Service]
-ExecStart=
+WorkingDirectory=/var/www/autopublisher
+ExecStart=/var/pyvenvs/autopublisher/bin/python3 /var/www/autopublisher/telegrambot.py
 Type=notify
 NotifyAccess=all
 KillSignal=SIGQUIT
