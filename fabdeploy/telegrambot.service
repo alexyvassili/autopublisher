@@ -9,7 +9,7 @@ WorkingDirectory=/var/www/autopublisher
 ExecStart=/var/pyvenvs/autopublisher/bin/python3 /var/www/autopublisher/telegrambot.py
 Type=simple
 NotifyAccess=all
-KillSignal=SIGQUIT
+KillSignal=SIGTERM
 
 [Install]
 WantedBy=multi-user.target
