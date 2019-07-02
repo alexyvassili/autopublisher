@@ -3,6 +3,8 @@ Description=Lexa Telegram Bot service
 After=multi-user.target
 
 [Service]
+User=alexey
+Group=users
 WorkingDirectory=/var/www/autopublisher
 ExecStart=/var/pyvenvs/autopublisher/bin/python3 /var/www/autopublisher/telegrambot.py
 Type=simple

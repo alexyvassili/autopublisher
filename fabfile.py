@@ -89,7 +89,7 @@ def prepare_interpreter():
 
 
 def install_system_libs():
-    sudo('aptitude install -y imagemagick git')
+    sudo('aptitude install -y imagemagick git xvfb')
 
 
 def install_libreoffice():
@@ -145,7 +145,6 @@ def download_gecko_driver():
         run('rm /tmp/geckodriver/*')
         run('rmdir /tmp/geckodriver')
         run('rm /tmp/geckodriver.tar.gz')
-
 
 
 def set_service():

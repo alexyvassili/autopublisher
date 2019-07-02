@@ -1,8 +1,8 @@
 import os
 from time import sleep
 
+from pyvirtualdisplay import Display
 from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -12,8 +12,7 @@ from selenium.webdriver.common.by import By
 from secrets import *
 from settings import *
 
-options = Options()
-options.headless = SELENIUM_HEADLESS
+display = None
 
 
 class title_not_contains(object):
@@ -28,8 +27,23 @@ class title_not_contains(object):
         return self.title not in driver.title
 
 
+def get_driver():
+    if SERVER_MODE:
+        global display
+        display = Display(visible=0, size=(1024, 768))
+        display.start()
+    driver = webdriver.Firefox()
+    return driver
+
+
+def close_driver(driver):
+    driver.quit()
+    if SERVER_MODE:
+        display.stop()
+
+
 def login_to_site():
-    driver = webdriver.Firefox(options=options)
+    driver = get_driver()
     driver.get(SITE_LOGIN_URL)
     assert "Лотошино" in driver.title
     name_input = driver.find_element_by_id('edit-name')
@@ -82,7 +96,7 @@ def rasp(mail_folder, jpegs):
     html = create_rasp_html(jpegs)
     update_rasp(driver, html)
     url = driver.current_url
-    driver.close()
+    close_driver(driver)
     return url
 
 
@@ -107,5 +121,5 @@ def news(title, html, jpegs):
     wait.until(title_not_contains("Создание материала"))
     sleep(1)
     url = driver.current_url
-    driver.close()
+    close_driver(driver)
     return url
