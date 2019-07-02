@@ -30,7 +30,7 @@ class title_not_contains(object):
 def get_driver():
     if SERVER_MODE:
         global display
-        display = Display(visible=0, size=(1024, 768))
+        display = Display(visible=0, size=(1366, 768))
         display.start()
     driver = webdriver.Firefox()
     return driver

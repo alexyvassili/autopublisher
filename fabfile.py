@@ -89,7 +89,7 @@ def prepare_interpreter():
 
 
 def install_system_libs():
-    sudo('aptitude install -y imagemagick git xvfb')
+    sudo('aptitude install -y imagemagick git xvfb x11-utils firefox-esr')
 
 
 def install_libreoffice():
