@@ -76,15 +76,15 @@ def prepare_package_system():
         upload_template('fabdeploy/sources.list', '/etc/apt/', use_sudo=True)
     sudo('apt-get update && apt-get upgrade')
     sudo('apt-get install -y aptitude')
-    sudo('aptitude install -y mc vim git')
+    sudo('aptitude install -y mc vim net-tools')
 
 
 def prepare_interpreter():
     if not exists(env.BASE_REMOTE_PYTHON_PATH):
         print('Interpreter not found, load miniconda')
         run("wget https://repo.continuum.io/miniconda/Miniconda3-4.5.4-Linux-x86_64.sh -O /tmp/miniconda3.sh")
-        sudo('mkdir -p {}'.format(env.BASE_REMOTE_MINICONDA_DIR))
-        sudo('/tmp/miniconda3.sh -b -p {}'.format(env.BASE_REMOTE_MINICONDA_DIR))
+        # sudo('mkdir -p {}'.format(env.BASE_REMOTE_MINICONDA_DIR))
+        sudo('bash /tmp/miniconda3.sh -b -p {}'.format(env.BASE_REMOTE_MINICONDA_DIR))
         run('rm /tmp/miniconda3.sh')
 
 
