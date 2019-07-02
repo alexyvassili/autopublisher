@@ -1,5 +1,6 @@
 import time
 import logging
+import traceback
 from functools import wraps
 
 import telegram
@@ -57,7 +58,9 @@ def mail_check(bot, update):
         for msg in telegram_check():
             update.message.reply_text(msg)
     except Exception as e:
+        tbc = traceback.format_exc()
         update.message.reply_text('Произошла ошибка! {}'.format(e))
+        update.message.reply_text(tbc)
     else:
         update.message.reply_text('Завершено!')
 
