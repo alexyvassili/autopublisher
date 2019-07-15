@@ -74,7 +74,7 @@ def mail_check(bot, update):
 def yandex_check(bot, update):
     bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
     print(update.message.text)
-    link = update.message.text.lower().strip()
+    link = update.message.text.strip()
     try:
         for msg in telegram_yandex_check(link):
             update.message.reply_text(msg)
