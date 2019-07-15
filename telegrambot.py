@@ -7,7 +7,7 @@ import telegram
 from telegram.ext import Updater, BaseFilter, Filters
 from telegram.ext import CommandHandler, MessageHandler
 
-from autopublisher import telegram_check
+from autopublisher import telegram_check, telegram_yandex_check
 from secrets import BOT_TOKEN, BOT_PROXY, BOT_OWNER_ID
 
 
@@ -26,6 +26,11 @@ def owner_only(bot_handler):
 class MailCheckFilter(BaseFilter):
     def filter(self, message):
         return 'проверь почту' in message.text.lower().strip()
+
+
+class YandexCheckFilter(BaseFilter):
+    def filter(self, message):
+        return 'https://yadi.sk/' in message.text.lower().strip()
 
 
 class HelloFilter(BaseFilter):
@@ -66,6 +71,22 @@ def mail_check(bot, update):
 
 
 @owner_only
+def yandex_check(bot, update):
+    bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
+    print(update.message.text)
+    link = update.message.text.lower().strip()
+    try:
+        for msg in telegram_yandex_check(link):
+            update.message.reply_text(msg)
+    except Exception as e:
+        tbc = traceback.format_exc()
+        update.message.reply_text('Произошла ошибка! {}'.format(e))
+        update.message.reply_text(tbc)
+    else:
+        update.message.reply_text('Завершено!')
+
+
+@owner_only
 def any_answer(bot, update):
     update.message.reply_text('А больше я ничего и не умею!')
 
@@ -75,6 +96,7 @@ updater = Updater(token=BOT_TOKEN, request_kwargs=BOT_PROXY)
 start_handler = CommandHandler('start', start)
 hello_handler = CommandHandler('hello', hello)
 mail_handler = MessageHandler(MailCheckFilter(), mail_check)
+yandex_handler = MessageHandler(YandexCheckFilter(), yandex_check)
 hello_msg_handler = MessageHandler(HelloFilter(), hello_msg)
 any_handler = MessageHandler(Filters.all, any_answer)  # Заглушка на всё остальное
 
@@ -82,6 +104,7 @@ updater.dispatcher.add_handler(start_handler)
 updater.dispatcher.add_handler(hello_handler)
 updater.dispatcher.add_handler(hello_msg_handler)
 updater.dispatcher.add_handler(mail_handler)
+updater.dispatcher.add_handler(yandex_handler)
 updater.dispatcher.add_handler(any_handler)
 
 updater.start_polling()  # поехали!

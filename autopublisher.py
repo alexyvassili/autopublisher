@@ -1,10 +1,12 @@
 import os
 import time
 import shutil
+from datetime import datetime
 
 import mail
 import prepare
 import publish
+from yandex import load_files_from_yandex_disk_folder
 from settings import TMP_FOLDER, TMP_FOLDER_PREFIX
 from secrets import MAIL_FROM
 
@@ -50,6 +52,29 @@ def telegram_check():
         shutil.rmtree(mail_folder)
 
     mail.close_connection(connection)
+
+
+def telegram_yandex_check(yandex_disk_link):
+    yield "Скачиваем с Яндекса..."
+    mail_folder = "/tmp/yandex_loaded_" + datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
+    if os.path.exists(mail_folder):
+        shutil.rmtree(mail_folder)
+    os.makedirs(mail_folder)
+
+    try:
+        load_files_from_yandex_disk_folder(yandex_disk_link, target_folder=mail_folder)
+        yield "Подготавливаем..."
+        prepare.news_folder(mail_folder)  # заглушка для распознавания разных новостей
+        yield "Публикуем..."
+        title, html, jpegs = prepare.news(mail_folder)
+        url = publish.news(title, html, jpegs)
+        yield "Опубликовано, проверь"
+        yield url
+    except BaseException as e:
+        yield "Не получилось опубликовать информацию"
+        shutil.rmtree(mail_folder)
+        raise e
+    shutil.rmtree(mail_folder)
 
 
 if __name__ == "__main__":
