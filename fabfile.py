@@ -22,6 +22,7 @@ def bootstrap():
     # input('prepare package system')
     prepare_package_system()
     # input('prepare_interpreter')
+    install_pydevel_packages()
     prepare_interpreter()
     # input('install_system_libs')
     install_system_libs()
@@ -56,36 +57,42 @@ def deploy():
 
 def set_env():
     env.USER = DEPLOY_USER
-    env.BASE_PATH = '/var/www'
-    env.VENV_PATH = '/var/pyvenvs'
+    env.BASE_PATH = f'/home/{env.USER}/projects'
+    env.VENV_PATH = f'/home/{env.USER}/.pyenv/versions'
     env.PROJECT_NAME = 'autopublisher'
     env.REMOTE_PROJECT_PATH = os.path.join(env.BASE_PATH, env.PROJECT_NAME)
     env.REMOTE_VENV_PATH = os.path.join(env.VENV_PATH,
                                         env.PROJECT_NAME)
     env.GIT_REPO_PATH = "https://github.com/alexyvassili/autopublisher.git"
-    env.BASE_REMOTE_MINICONDA_DIR = '/usr/local/miniconda3'
-    env.BASE_REMOTE_PYTHON_PATH = '/usr/local/miniconda3/bin/python3.6'
-    env.VENV_REMOTE_PYTHON_PATH = os.path.join(env.REMOTE_VENV_PATH, 'bin', 'python3.6')
-
-
+    env.PYTHON_VESRION = "3.6.5"
+    env.PYENV_PATH = f'/home/{env.USER}/.pyenv'
+    env.BASE_REMOTE_NTERPRETER = f'/home/{env.USER}/.pyenv/versions/{env.PYTHON_VESRION}/bin/python'
+    env.REMOTE_VENV_PATH = f'/home/{env.USER}/.pyenv/versions/{env.PROJECT_NAME}'
+    env.VENV_REMOTE_PYTHON_PATH = f'/home/{env.USER}/.pyenv/versions/{env.PROJECT_NAME}/bin/python'
 
 
 def prepare_package_system():
     if not exists('/etc/apt/sources.list.old'):
         sudo('mv /etc/apt/sources.list /etc/apt/sources.list.old')
-        upload_template('fabdeploy/sources.list', '/etc/apt/', use_sudo=True)
-    sudo('apt-get update && apt-get upgrade')
+        upload_template('deploy/sources.list', '/etc/apt/', use_sudo=True)
+    sudo('apt-get update && apt-get upgrade -y')
     sudo('apt-get install -y aptitude')
-    sudo('aptitude install -y mc vim net-tools')
+
+
+def install_pydevel_packages():
+    # Libraries for loading and installing Python
+    sudo('aptitude install -y git curl mc vim net-tools gcc build-essential '
+         'python-dev libreadline-dev libbz2-dev libssl-dev libsqlite3-dev libxslt1-dev libxml2-dev zlib1g zlib1g-dev')
 
 
 def prepare_interpreter():
-    if not exists(env.BASE_REMOTE_PYTHON_PATH):
-        print('Interpreter not found, load miniconda')
-        run("wget https://repo.continuum.io/miniconda/Miniconda3-4.5.4-Linux-x86_64.sh -O /tmp/miniconda3.sh")
-        # sudo('mkdir -p {}'.format(env.BASE_REMOTE_MINICONDA_DIR))
-        sudo('bash /tmp/miniconda3.sh -b -p {}'.format(env.BASE_REMOTE_MINICONDA_DIR))
-        run('rm /tmp/miniconda3.sh')
+    if not exists(env.PYENV_PATH):
+        print('Pyenv not found, loading...')
+        run("curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash")
+
+    if not exists(env.BASE_REMOTE_NTERPRETER):
+        print(f'Interpreter not found, load Python {env.PYTHON_VESRION}')
+        run(f"{env.PYENV_PATH}/bin/pyenv install {env.PYTHON_VESRION}")
 
 
 def install_system_libs():
@@ -126,7 +133,7 @@ def set_secrets():
 
 def create_virtualenv():
     if not exists(env.VENV_REMOTE_PYTHON_PATH):
-        run(f'{env.BASE_REMOTE_PYTHON_PATH} -m venv {env.REMOTE_VENV_PATH}')
+        run(f"{env.PYENV_PATH}/bin/pyenv virtualenv {env.PYTHON_VESRION} {env.PROJECT_NAME}")
         pip = os.path.join(env.REMOTE_VENV_PATH, 'bin', 'pip3')
         run(f'{pip} install --upgrade pip')
 
