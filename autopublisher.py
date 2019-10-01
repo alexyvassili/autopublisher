@@ -28,7 +28,7 @@ def telegram_check():
         try:
             if 'расписание' in mail_metadata['Subject'].lower():
                 yield "Похоже, это расписание"
-                if int(time.strftime("%d")) > 20:  # если конец месяца - публиковать еще рано
+                if 30 > int(time.strftime("%d")) > 20:  # если конец месяца - публиковать еще рано
                     yield "Но публиковать его еще рано"
                     raise ValueError('Rasp publish only on start of month')
                 yield "Обрабатываем..."
