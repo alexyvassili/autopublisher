@@ -1,14 +1,16 @@
 import time
 import logging
+import json
 import traceback
 from functools import wraps
 
 import telegram
+import apiai
 from telegram.ext import Updater, BaseFilter, Filters
 from telegram.ext import CommandHandler, MessageHandler
 
 from autopublisher import telegram_check, telegram_yandex_check
-from secrets import BOT_TOKEN, BOT_PROXY, BOT_OWNER_ID
+from secrets import BOT_TOKEN, BOT_PROXY, BOT_OWNER_ID, DIALOGFLOW_API_CLIENT_TOKEN
 
 
 def owner_only(bot_handler):
@@ -87,6 +89,24 @@ def yandex_check(bot, update):
 
 
 @owner_only
+def dialog_bot(bot, update):
+    request = apiai.ApiAI(DIALOGFLOW_API_CLIENT_TOKEN).text_request()  # Токен API к Dialogflow
+    request.lang = 'ru'  # На каком языке будет послан запрос
+    # request.session_id = 'BatlabAIBot'  # ID Сессии диалога (нужно, чтобы потом учить бота)
+    request.session_id = str(update.message.from_user.id)  # ID сессии диалога = ID пользователя
+    request.query = update.message.text  # Посылаем запрос к ИИ с сообщением от юзера
+    responseJson = json.loads(request.getresponse().read().decode('utf-8'))
+    response = responseJson['result']['fulfillment']['speech']  # Разбираем JSON и вытаскиваем ответ
+    # Если есть ответ от бота - присылаем юзеру, если нет - бот его не понял
+    if response:
+        update.message.reply_text(response)
+        # bot.send_message(chat_id=update.message.chat_id, text=response)
+    else:
+        update.message.reply_text('Я Вас не совсем понял!')
+        # bot.send_message(chat_id=update.message.chat_id, text='Я Вас не совсем понял!')
+
+
+@owner_only
 def any_answer(bot, update):
     update.message.reply_text('А больше я ничего и не умею!')
 
@@ -98,6 +118,7 @@ hello_handler = CommandHandler('hello', hello)
 mail_handler = MessageHandler(MailCheckFilter(), mail_check)
 yandex_handler = MessageHandler(YandexCheckFilter(), yandex_check)
 hello_msg_handler = MessageHandler(HelloFilter(), hello_msg)
+bot_handler = MessageHandler(Filters.all, dialog_bot)  # Текстики (точнее сейчас всё) шлются в диалог бота
 any_handler = MessageHandler(Filters.all, any_answer)  # Заглушка на всё остальное
 
 updater.dispatcher.add_handler(start_handler)
@@ -105,6 +126,7 @@ updater.dispatcher.add_handler(hello_handler)
 updater.dispatcher.add_handler(hello_msg_handler)
 updater.dispatcher.add_handler(mail_handler)
 updater.dispatcher.add_handler(yandex_handler)
+updater.dispatcher.add_handler(bot_handler)
 updater.dispatcher.add_handler(any_handler)
 
 updater.start_polling()  # поехали!

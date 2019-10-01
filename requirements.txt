@@ -1,3 +1,4 @@
+apiai==1.2.3
 asn1crypto==0.24.0
 bcrypt==3.1.7
 beautifulsoup4==4.7.1
@@ -10,6 +11,7 @@ EasyProcess==0.2.7
 Fabric3==1.14.post1
 future==0.17.1
 mammoth==1.4.9
+numpy==1.17.2
 paramiko==2.6.0
 Pillow==6.0.0
 pycparser==2.19
