@@ -4,6 +4,7 @@ import email
 from email.header import decode_header
 import mimetypes
 import shutil
+from bs4 import BeautifulSoup
 
 from secrets import MAIL_SERVER, MAIL_LOGIN, MAIL_PASSWORD
 
@@ -19,6 +20,7 @@ def get_connection():
 
 def get_new_mails_from(connection, from_email):
     status, new_mails_ids = connection.search(None, f'(FROM {from_email} UNSEEN)')
+    new_mails_ids = [uid for uid in new_mails_ids[0].split(b' ') if uid]
     return new_mails_ids
 
 
@@ -50,7 +52,12 @@ def get_mail_metadata(message):
     mail_metadata['Date'] = message['Date']
     mail_metadata['From'] = decode_mail_field(message, 'From')
     mail_metadata['Subject'] = decode_mail_field(message, 'Subject')
-    mail_body = message.get_payload()[0].get_payload(decode=True)
+    try:
+        # get_payload can return list or bytes str, so
+        # try with str raise AttributeError: 'str' object has no attribute 'get_payload'
+        mail_body = message.get_payload()[0].get_payload(decode=True)
+    except AttributeError:
+        mail_body = message.get_payload(decode=True)
     mail_metadata['Body'] = mail_body.decode()
     mail_metadata['Attachments'] = get_attachments_list(message)
     return mail_metadata

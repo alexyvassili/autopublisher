@@ -1,95 +1,42 @@
-import time
 import logging
 import json
 import traceback
-from functools import wraps
 
-import telegram
 import apiai
-from telegram.ext import Updater, BaseFilter, Filters
+from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler
+from telegram.ext import Filters
 
-from autopublisher import telegram_check, telegram_yandex_check
-from secrets import BOT_TOKEN, BOT_PROXY, BOT_OWNER_ID, DIALOGFLOW_API_CLIENT_TOKEN
-
-
-def owner_only(bot_handler):
-    owner_id = BOT_OWNER_ID
-    @wraps(bot_handler)
-    def wrapper(bot, update):
-        if update.message.from_user.id != owner_id:
-            update.message.reply_text('Ты не мой хозяин')
-            return
-        return bot_handler(bot, update)
-
-    return wrapper
+from telegramlib import owner_only
+from customfilters import YandexCheckFilter
+from autopublisher import telegram_yandex_check
+from mailbot import mail_handler
+from secrets import BOT_TOKEN, BOT_PROXY, DIALOGFLOW_API_CLIENT_TOKEN
 
 
-class MailCheckFilter(BaseFilter):
-    def filter(self, message):
-        return 'проверь почту' in message.text.lower().strip()
-
-
-class YandexCheckFilter(BaseFilter):
-    def filter(self, message):
-        return 'https://yadi.sk/' in message.text.lower().strip()
-
-
-class HelloFilter(BaseFilter):
-    hi_messages = ["привет", "здоров"]
-
-    def filter(self, message):
-        msg = message.text.lower().strip()
-        return any([text in msg for text in self.hi_messages])
-
-
-def hello(bot, update):
-    update.message.reply_text(
-        'Hello {}'.format(update.message.from_user.first_name))
-
-
-def hello_msg(bot, update):
-    update.message.reply_text(
-        'Здорово, {}!'.format(update.message.from_user.first_name))
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 @owner_only
-def start(bot, update):
-    update.message.reply_text('Привет, хозяин!')
+def start(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Привет, хозяин!")
+
+
+def echo(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
 
 
 @owner_only
-def mail_check(bot, update):
-    bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
-    try:
-        for msg in telegram_check():
-            update.message.reply_text(msg)
-    except Exception as e:
-        tbc = traceback.format_exc()
-        update.message.reply_text('Произошла ошибка! {}'.format(e))
-        update.message.reply_text(tbc)
-    else:
-        update.message.reply_text('Завершено!')
-
-
-@owner_only
-def yandex_check(bot, update):
-    bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
-    print(update.message.text)
+def yandex_check(update, context):
     link = update.message.text.strip()
-    try:
-        for msg in telegram_yandex_check(link):
-            update.message.reply_text(msg)
-    except Exception as e:
-        tbc = traceback.format_exc()
-        update.message.reply_text('Произошла ошибка! {}'.format(e))
-        update.message.reply_text(tbc)
-    else:
-        update.message.reply_text('Завершено!')
+    for msg in telegram_yandex_check(link):
+        context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Завершено!')
 
 
 @owner_only
-def dialog_bot(bot, update):
+def dialog_bot(update, context):
     request = apiai.ApiAI(DIALOGFLOW_API_CLIENT_TOKEN).text_request()  # Токен API к Dialogflow
     request.lang = 'ru'  # На каком языке будет послан запрос
     # request.session_id = 'BatlabAIBot'  # ID Сессии диалога (нужно, чтобы потом учить бота)
@@ -98,35 +45,44 @@ def dialog_bot(bot, update):
     responseJson = json.loads(request.getresponse().read().decode('utf-8'))
     response = responseJson['result']['fulfillment']['speech']  # Разбираем JSON и вытаскиваем ответ
     # Если есть ответ от бота - присылаем юзеру, если нет - бот его не понял
-    if response:
-        update.message.reply_text(response)
-        # bot.send_message(chat_id=update.message.chat_id, text=response)
-    else:
-        update.message.reply_text('Я Вас не совсем понял!')
-        # bot.send_message(chat_id=update.message.chat_id, text='Я Вас не совсем понял!')
+    response_text = response or 'Я Вас не совсем понял!'
+    context.bot.send_message(chat_id=update.effective_chat.id, text=response_text)
 
 
-@owner_only
-def any_answer(bot, update):
-    update.message.reply_text('А больше я ничего и не умею!')
+def any_answer(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text='А больше я ничего и не умею!')
 
 
-updater = Updater(token=BOT_TOKEN, request_kwargs=BOT_PROXY)
+def error(update, context):
+    """Log Errors caused by Updates."""
+    logging.warning('Update "%s" caused error "%s"', update, context.error)
+    tbc = traceback.format_exc()
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Произошла ошибка!')
+    context.bot.send_message(chat_id=update.effective_chat.id, text=tbc)
+
 
 start_handler = CommandHandler('start', start)
-hello_handler = CommandHandler('hello', hello)
-mail_handler = MessageHandler(MailCheckFilter(), mail_check)
 yandex_handler = MessageHandler(YandexCheckFilter(), yandex_check)
-hello_msg_handler = MessageHandler(HelloFilter(), hello_msg)
-bot_handler = MessageHandler(Filters.all, dialog_bot)  # Текстики (точнее сейчас всё) шлются в диалог бота
+bot_handler = MessageHandler(Filters.text, dialog_bot)  # Текстики шлются в диалог бота
+echo_handler = MessageHandler(Filters.text, echo)
 any_handler = MessageHandler(Filters.all, any_answer)  # Заглушка на всё остальное
 
-updater.dispatcher.add_handler(start_handler)
-updater.dispatcher.add_handler(hello_handler)
-updater.dispatcher.add_handler(hello_msg_handler)
-updater.dispatcher.add_handler(mail_handler)
-updater.dispatcher.add_handler(yandex_handler)
-updater.dispatcher.add_handler(bot_handler)
-updater.dispatcher.add_handler(any_handler)
 
-updater.start_polling()  # поехали!
+if __name__ == "__main__":
+    updater = Updater(token=BOT_TOKEN, use_context=True, request_kwargs=BOT_PROXY)
+    dispatcher = updater.dispatcher
+
+    dispatcher.add_handler(start_handler)
+    dispatcher.add_handler(mail_handler)
+    dispatcher.add_handler(yandex_handler)
+    dispatcher.add_handler(bot_handler)
+    dispatcher.add_handler(echo_handler)
+    dispatcher.add_handler(any_handler)
+    dispatcher.add_error_handler(error)
+
+    updater.start_polling()
+
+    # Run the bot until you press Ctrl-C or the process receives SIGINT,
+    # SIGTERM or SIGABRT. This should be used most of the time, since
+    # start_polling() is non-blocking and will stop the bot gracefully.
+    updater.idle()

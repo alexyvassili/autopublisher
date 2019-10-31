@@ -108,7 +108,7 @@ def get_html_news_from_docx(docx):
 
 
 def news(mail_folder):
-    jpegs = get_files_for_extension(mail_folder, 'jpg')
+    jpegs = get_files_for_extension(mail_folder, 'jpg') or get_files_for_extension(mail_folder, 'jpeg')
     if not jpegs:
         raise PrepareError('Can\'t publish news without images')
 
@@ -132,5 +132,3 @@ def news_folder(mail_folder):
     counts = {}
     for ext in extensions:
         counts[ext] = get_files_for_extension(mail_folder, ext)
-
-
