@@ -3,6 +3,7 @@ import re
 import shutil
 import zipfile
 import mammoth
+import html2text
 import xml.etree.ElementTree as ElementTree
 from PIL import Image
 from io import BytesIO
@@ -155,3 +156,17 @@ def docx2html(docx):
         html = result.value  # The generated HTML
         messages = result.messages  # Any messages, such as warnings during conversion
     return html, messages
+
+
+def get_text_from_html(html):
+    h = html2text.HTML2Text()
+    h.ignore_links = True
+    h.bypass_tables = True
+    h.blockquote = -1
+    h.strong_mark = ""
+    text = h.handle(html)
+    # убираем идущие подряд переносы строк
+    # и строки, состоящие из одних пробелов
+    text = '\n'.join(t for t in text.split('\n')
+                     if t and not re.match(r'^\s+$', t))
+    return text

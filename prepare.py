@@ -10,6 +10,8 @@ from file_utils import format_jpeg_name, get_file_size_mb, get_files_for_extensi
 SOFFICE_PATH = "/opt/libreoffice6.2/program/soffice"
 IMG_FOR_NEWS_FOLDER = 'img'
 WIDE_SIDE_IMAGE = 1024
+HTML_P_START = """<p style="text-align: justify; text-indent: 20px;"><span style="font-size: 14pt; line-height: 115%; font-family: 'Times New Roman', 'serif'; color: #000000;">"""
+HTML_P_END = '</span></p>'
 
 
 class PrepareError(Exception):
@@ -89,6 +91,18 @@ def prepare_html_for_news(mail_folder):
     return title, html
 
 
+def news_from_text(text):
+    title = None
+    paragraphs = []
+    for line in text.split('\n'):
+        if not title:
+            title = line
+            continue
+        paragraphs.append(f"{HTML_P_START}{line}{HTML_P_END}")
+    news_html = '\n'.join(paragraphs)
+    return title, news_html
+
+
 def get_html_news_from_docx(docx):
     html, messages = docx2html(docx)
     soup = BeautifulSoup(html, "html.parser")
@@ -99,9 +113,8 @@ def get_html_news_from_docx(docx):
         if not title:
             title = p.text
             continue
-        string = string.replace('<p>',
-                                """<p style="text-align: justify; text-indent: 20px;"><span style="font-size: 14pt; line-height: 115%; font-family: 'Times New Roman', 'serif'; color: #000000;">""")
-        string = string.replace('</p>', '</span></p>')
+        string = string.replace('<p>', HTML_P_START)
+        string = string.replace('</p>', HTML_P_END)
         paragraphs.append(string)
     news_html = '\n'.join(paragraphs)
     return title, news_html

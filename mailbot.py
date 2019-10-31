@@ -17,7 +17,7 @@ from telegramlib import owner_only
 # Stages
 SEARCH, TEXT, PUBLISH, RASPLOAD = range(4)
 # Callback data
-NEWS, RASP, CANCEL, YES, NO = range(5)
+NEWS, RASP, CANCEL, YES, NO, EDIT = range(6)
 
 current_mail = maildriver.CurrentMail()  # Хранит состояние текущего письма
 
@@ -50,23 +50,34 @@ def mail_check(update, context):
 
 def news(update, context):
     """Show new choice of buttons"""
-    news_text = current_mail.text
+    news_text = maildriver.get_text_for_news(current_mail)
     context.bot.send_message(chat_id=update.effective_chat.id, text=news_text)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Давай текст')
     return TEXT
 
 
-def news_text(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text='Текст\n' + update.message.text)
-    context.bot.send_message(chat_id=update.effective_chat.id, text='Картинки 1, 2, 3, 4, 5')
+def news_prepare(update, context):
+    current_mail.text_ready = update.message.text
+    current_mail.images = maildriver.get_images_for_news(current_mail)
+
+    text_to_show = current_mail.text_ready.replace('\n', '>\n<') + '>'
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Текст\n<' + text_to_show)
+
+    if current_mail.images:
+        imgs = "\n".join(f"{i+1}) {img}" for i, img in enumerate(current_mail.images))
+    else:
+        imgs = "Картинок нет."
+
     keyboard = [
         [InlineKeyboardButton("Publish", callback_data=str(YES)),
-         InlineKeyboardButton("Cancel", callback_data=str(NO))
+         # InlineKeyboardButton("Edit", callback_data=str(EDIT)),
+         InlineKeyboardButton("Cancel", callback_data=str(NO)),
          ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     context.bot.send_message(chat_id=update.effective_chat.id,
-                             text='Текст письма',
+                             text=imgs,
                              reply_markup=reply_markup
                              )
     return PUBLISH
@@ -74,14 +85,24 @@ def news_text(update, context):
 
 def rasp(update, context):
     """Show new choice of buttons"""
-    context.bot.send_message(chat_id=update.effective_chat.id, text='Расписание')
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Подготовка...')
+    jpegs = prepare.rasp(current_mail.folder)
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Публикуем расписание')
+    url = publish.rasp(current_mail.folder, jpegs)
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Опубликовано!')
+    context.bot.send_message(chat_id=update.effective_chat.id, text=url)
+    current_mail.clear()
     return ConversationHandler.END
 
 
 def publish_news(update, context):
     """Show new choice of buttons"""
+    title, html = prepare.news_from_text(current_mail.text_ready)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Публикуем')
-    context.bot.send_message(chat_id=update.effective_chat.id, text='Опубликовано')
+    url = publish.news(title, html, current_mail.images)
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Опубликовано!')
+    context.bot.send_message(chat_id=update.effective_chat.id, text=url)
+    current_mail.clear()
     return ConversationHandler.END
 
 
@@ -107,7 +128,7 @@ mail_handler = ConversationHandler(
                     # CallbackQueryHandler(two, pattern='^' + str(TWO) + '$'),
                     # CallbackQueryHandler(three, pattern='^' + str(THREE) + '$'),
                     # CallbackQueryHandler(four, pattern='^' + str(FOUR) + '$')],
-            TEXT: [MessageHandler(Filters.text, news_text)],
+            TEXT: [MessageHandler(Filters.text, news_prepare)],
             PUBLISH: [CallbackQueryHandler(publish_news, pattern='^' + str(YES) + '$'),
                       CallbackQueryHandler(cancel, pattern='^' + str(NO) + '$'),
                       ],

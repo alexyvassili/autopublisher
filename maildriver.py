@@ -2,6 +2,9 @@ import os
 import re
 import shutil
 import mail
+import prepare
+import publish
+from document_utils import docx2html, get_text_from_html
 import html2text
 
 from settings import TMP_FOLDER, TMP_FOLDER_PREFIX
@@ -13,21 +16,26 @@ class CurrentMail:
         self.folder = None
         self.metadata = None
         self.text = None
+        self.text_ready = None
+        self.images = None
         self.about = None
 
     def init_mail(self, mail_id, mail_folder, mail_metadata):
         self.mail_id = mail_id
         self.folder = mail_folder
         self.metadata = mail_metadata
-        self.text = get_mail_text(mail_metadata['Body'])
+        self.text = get_text_from_html(mail_metadata['Body'])
         self.about = get_mail_about(mail_metadata, self.text)
+
+    def clear(self):
+        if self.folder:
+            shutil.rmtree(self.folder)
+        self.__init__()
 
     def rollback(self):
         if self.mail_id:
             mark_mail_as_unread(self.mail_id)
-        if self.folder:
-            shutil.rmtree(self.folder)
-        self.__init__()
+        self.clear()
 
 
 def load_one_mail_rollback(mail_id, mail_folder):
@@ -68,20 +76,6 @@ def mark_mail_as_unread(mail_id):
         mail.close_connection(connection)
 
 
-def get_mail_text(html):
-    h = html2text.HTML2Text()
-    h.ignore_links = True
-    h.bypass_tables = True
-    h.blockquote = -1
-    h.strong_mark = ""
-    text = h.handle(html)
-    # убираем идущие подряд переносы строк
-    # и строки, состоящие из одних пробелов
-    text = '\n'.join(t for t in text.split('\n')
-                     if t and not re.match(r'^\s+$', t))
-    return text
-
-
 def get_mail_about(mail_metadata, body_text=None):
     body = body_text or mail_metadata['Body']
 
@@ -95,3 +89,32 @@ Attachments:
     for i, att in enumerate(mail_metadata['Attachments']):
         about += f"{i+1}) {att}\n"
     return about
+
+
+def get_text_from_docx(docx):
+    html, messages = docx2html(docx)
+    text = get_text_from_html(html)
+    return text
+
+
+def get_text_for_news(current_mail):
+    docxs = prepare.get_fullpath_files_for_extension(current_mail.folder, 'docx')
+    if not docxs:
+        text = current_mail.text
+    elif len(docxs) > 1:
+        raise prepare.PrepareError("Found many docx for one news")
+    else:
+        docx = docxs[0]
+        text = get_text_from_docx(docx)
+    return text
+
+
+def get_images_for_news(current_mail):
+    jpegs = (prepare.get_files_for_extension(current_mail.folder, 'jpg') +
+             prepare.get_files_for_extension(current_mail.folder, 'jpeg'))
+    if not jpegs:
+        return []
+
+    jpegs_for_news = prepare.prepare_jpegs_for_news(jpegs, current_mail.folder,
+                                            os.path.join(current_mail.folder, prepare.IMG_FOR_NEWS_FOLDER))
+    return jpegs_for_news
