@@ -3,8 +3,9 @@ import subprocess
 import shutil
 from bs4 import BeautifulSoup
 from datetime import datetime
+from razdel import sentenize
 
-from document_utils import format_rasp_docx, cd, resize_jpeg_on_wide_size, docx2html
+from document_utils import format_rasp_docx, cd, resize_jpeg_on_wide_size, docx2html, get_text_from_html
 from file_utils import format_jpeg_name, get_file_size_mb, get_files_for_extension, get_fullpath_files_for_extension
 
 SOFFICE_PATH = "/opt/libreoffice6.2/program/soffice"
@@ -91,16 +92,18 @@ def prepare_html_for_news(mail_folder):
     return title, html
 
 
-def news_from_text(text):
-    title = None
+def prepare_text(text):
+    title, news_text = text.split('\n', 1)
+    news_text = news_text.replace('\n', ' ')
+    sentences = [i.text for i in sentenize(news_text)]
+    return title, sentences
+
+
+def html_from_sentences(sentences):
     paragraphs = []
-    for line in text.split('\n'):
-        if not title:
-            title = line
-            continue
+    for line in sentences:
         paragraphs.append(f"{HTML_P_START}{line}{HTML_P_END}")
-    news_html = '\n'.join(paragraphs)
-    return title, news_html
+    return '\n'.join(paragraphs)
 
 
 def get_html_news_from_docx(docx):
@@ -118,6 +121,22 @@ def get_html_news_from_docx(docx):
         paragraphs.append(string)
     news_html = '\n'.join(paragraphs)
     return title, news_html
+
+
+def get_news_text_from_fwd_mail(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    main_html = str(soup.blockquote)
+    text = get_text_from_html(main_html)
+    if text.startswith('>'):
+        text = text[2:]
+    return text
+
+
+def get_text_from_mail_body(metadata):
+    if 'fwd' not in metadata['Subject'].lower():
+        raise ValueError("Can't find text in non-forwarded messages")
+
+    return get_news_text_from_fwd_mail(metadata['Body'])
 
 
 def news(mail_folder):

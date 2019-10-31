@@ -4,7 +4,6 @@ import email
 from email.header import decode_header
 import mimetypes
 import shutil
-from bs4 import BeautifulSoup
 
 from secrets import MAIL_SERVER, MAIL_LOGIN, MAIL_PASSWORD
 

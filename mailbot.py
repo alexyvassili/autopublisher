@@ -1,16 +1,12 @@
 import logging
-import os
-import shutil
 
 import maildriver
 import prepare
 import publish
-from settings import TMP_FOLDER, TMP_FOLDER_PREFIX
 from secrets import MAIL_FROM
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CommandHandler, MessageHandler, ConversationHandler, CallbackQueryHandler
-from telegram.ext import Filters
 from telegramlib import owner_only
 
 
@@ -24,8 +20,6 @@ current_mail = maildriver.CurrentMail()  # Хранит состояние те�
 
 @owner_only
 def mail_check(update, context):
-    """Send message on `/start`."""
-    # Get user that sent /start and log his name
     user = update.message.from_user
     logging.info("User %s started the conversation.", user.first_name)
 
@@ -49,21 +43,24 @@ def mail_check(update, context):
 
 
 def news(update, context):
-    """Show new choice of buttons"""
-    news_text = maildriver.get_text_for_news(current_mail)
-    context.bot.send_message(chat_id=update.effective_chat.id, text=news_text)
-    context.bot.send_message(chat_id=update.effective_chat.id, text='Давай текст')
+    title, news_sentences = maildriver.get_text_for_news(current_mail)
+    current_mail.title, current_mail.sentences = title, news_sentences
+    text_to_show = '<' + '>\n<'.join(news_sentences) + '>'
+    context.bot.send_message(chat_id=update.effective_chat.id, text=f"Title: {title}")
+    keyboard = [
+        [InlineKeyboardButton("Yes", callback_data=str(YES)),
+         # InlineKeyboardButton("Edit", callback_data=str(EDIT)),
+         InlineKeyboardButton("Cancel", callback_data=str(CANCEL)),
+         ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text_to_show, reply_markup=reply_markup)
+
     return TEXT
 
 
 def news_prepare(update, context):
-    current_mail.text_ready = update.message.text
     current_mail.images = maildriver.get_images_for_news(current_mail)
-
-    text_to_show = current_mail.text_ready.replace('\n', '>\n<') + '>'
-
-    context.bot.send_message(chat_id=update.effective_chat.id, text='Текст\n<' + text_to_show)
-
     if current_mail.images:
         imgs = "\n".join(f"{i+1}) {img}" for i, img in enumerate(current_mail.images))
     else:
@@ -84,7 +81,6 @@ def news_prepare(update, context):
 
 
 def rasp(update, context):
-    """Show new choice of buttons"""
     context.bot.send_message(chat_id=update.effective_chat.id, text='Подготовка...')
     jpegs = prepare.rasp(current_mail.folder)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Публикуем расписание')
@@ -96,10 +92,9 @@ def rasp(update, context):
 
 
 def publish_news(update, context):
-    """Show new choice of buttons"""
-    title, html = prepare.news_from_text(current_mail.text_ready)
+    html = prepare.html_from_sentences(current_mail.sentences)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Публикуем')
-    url = publish.news(title, html, current_mail.images)
+    url = publish.news(current_mail.title, html, current_mail.images)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Опубликовано!')
     context.bot.send_message(chat_id=update.effective_chat.id, text=url)
     current_mail.clear()
@@ -107,7 +102,6 @@ def publish_news(update, context):
 
 
 def cancel(update, context):
-    """Show new choice of buttons"""
     current_mail.rollback()
     context.bot.send_message(chat_id=update.effective_chat.id, text='Отмена')
     return ConversationHandler.END
@@ -121,19 +115,15 @@ mail_handler = ConversationHandler(
         entry_points=[CommandHandler('mail', mail_check)],
         states={
             SEARCH: [CallbackQueryHandler(news, pattern='^' + str(NEWS) + '$'),
-                    CallbackQueryHandler(rasp, pattern='^' + str(RASP) + '$'),
-                    CallbackQueryHandler(cancel, pattern='^' + str(CANCEL) + '$'),
-                    # MessageHandler(Filters.text, news_text),
-                    ],
-                    # CallbackQueryHandler(two, pattern='^' + str(TWO) + '$'),
-                    # CallbackQueryHandler(three, pattern='^' + str(THREE) + '$'),
-                    # CallbackQueryHandler(four, pattern='^' + str(FOUR) + '$')],
-            TEXT: [MessageHandler(Filters.text, news_prepare)],
+                     CallbackQueryHandler(rasp, pattern='^' + str(RASP) + '$'),
+                     CallbackQueryHandler(cancel, pattern='^' + str(CANCEL) + '$'),
+                     ],
+            TEXT: [CallbackQueryHandler(news_prepare, pattern='^' + str(YES) + '$'),
+                   CallbackQueryHandler(cancel, pattern='^' + str(CANCEL) + '$'),
+                   ],
             PUBLISH: [CallbackQueryHandler(publish_news, pattern='^' + str(YES) + '$'),
                       CallbackQueryHandler(cancel, pattern='^' + str(NO) + '$'),
                       ],
-            # SECOND: [CallbackQueryHandler(start_over, pattern='^' + str(ONE) + '$'),
-            #          CallbackQueryHandler(end, pattern='^' + str(TWO) + '$')]
         },
         fallbacks=[CommandHandler('echo', echo)],
     )

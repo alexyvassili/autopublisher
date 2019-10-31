@@ -1,11 +1,10 @@
 import os
-import re
+import logging
 import shutil
 import mail
 import prepare
-import publish
 from document_utils import docx2html, get_text_from_html
-import html2text
+from spelling import spell_line
 
 from settings import TMP_FOLDER, TMP_FOLDER_PREFIX
 
@@ -16,6 +15,8 @@ class CurrentMail:
         self.folder = None
         self.metadata = None
         self.text = None
+        self.title = None
+        self.sentences = None
         self.text_ready = None
         self.images = None
         self.about = None
@@ -100,13 +101,20 @@ def get_text_from_docx(docx):
 def get_text_for_news(current_mail):
     docxs = prepare.get_fullpath_files_for_extension(current_mail.folder, 'docx')
     if not docxs:
-        text = current_mail.text
+        text = prepare.get_text_from_mail_body(current_mail.metadata)
     elif len(docxs) > 1:
         raise prepare.PrepareError("Found many docx for one news")
     else:
         docx = docxs[0]
         text = get_text_from_docx(docx)
-    return text
+    title, sentences = prepare.prepare_text(text)
+    title = spell_line(title)
+    try:
+        spelled_sentences = [spell_line(sent) for sent in sentences]
+    except Exception as e:
+        logging.warning("Error in spellchecker")
+        spelled_sentences = sentences
+    return title, spelled_sentences
 
 
 def get_images_for_news(current_mail):
