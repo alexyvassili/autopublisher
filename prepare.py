@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from razdel import sentenize
 
-from document_utils import format_rasp_docx, cd, resize_jpeg_on_wide_size, docx2html, get_text_from_html
+from document_utils import format_rasp_docx, cd, resize_jpeg_on_wide_size, docx2html, get_lines_from_html
 from file_utils import format_jpeg_name, get_file_size_mb, get_files_for_extension, get_fullpath_files_for_extension
 
 SOFFICE_PATH = "/opt/libreoffice6.2/program/soffice"
@@ -123,10 +123,23 @@ def get_html_news_from_docx(docx):
     return title, news_html
 
 
+def find_body_lines_in_fwd_mail(lines):
+    message_body_flag = False
+    body_lines = []
+    for line in lines:
+        if line.startswith('\\') or 'Конец пересылаемого сообщения' in line:
+            message_body_flag = False
+        if message_body_flag:
+            body_lines.append(line)
+        if '@' in line:
+            message_body_flag = True
+    return body_lines
+
+
 def get_news_text_from_fwd_mail(html):
-    soup = BeautifulSoup(html, 'html.parser')
-    main_html = str(soup.blockquote)
-    text = get_text_from_html(main_html)
+    lines = get_lines_from_html(html)
+    body_lines = find_body_lines_in_fwd_mail(lines)
+    text = '\n'.join(body_lines)
     if text.startswith('>'):
         text = text[2:]
     return text

@@ -158,7 +158,7 @@ def docx2html(docx):
     return html, messages
 
 
-def get_text_from_html(html):
+def get_lines_from_html(html):
     h = html2text.HTML2Text()
     h.ignore_links = True
     h.bypass_tables = True
@@ -167,6 +167,11 @@ def get_text_from_html(html):
     text = h.handle(html)
     # убираем идущие подряд переносы строк
     # и строки, состоящие из одних пробелов
-    text = '\n'.join(t for t in text.split('\n')
-                     if t and not re.match(r'^\s+$', t))
-    return text
+    lines = [t for t in text.split('\n')
+             if t and not re.match(r'^\s+$', t)]
+    return lines
+
+
+def get_text_from_html(html):
+    lines = get_lines_from_html(html)
+    return '\n'.join(lines)
