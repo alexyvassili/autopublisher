@@ -25,7 +25,10 @@ def get_new_mails_from(connection, from_email):
 
 
 def decode_mail_field(message, field):
-    data, encoding = decode_header(message[field])[0]
+    try:
+        data, encoding = decode_header(message[field])[0]
+    except TypeError:
+        return ""
     if encoding:
         data = data.decode(encoding)
     return data
