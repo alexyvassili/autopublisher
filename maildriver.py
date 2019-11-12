@@ -47,6 +47,7 @@ class CurrentMail:
             unrar(self.attachments[0], self.folder)
         else:
             return
+        self.update_about()
 
     def update_about(self):
         self.about += "\nUnpacked Attachments:\n"
