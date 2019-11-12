@@ -3,7 +3,7 @@ import logging
 import shutil
 import mail
 import prepare
-from document_utils import docx2html, get_text_from_html
+from document_utils import docx2html, get_text_from_html, unzip_without_structure, unrar
 from spelling import spell_line
 
 from settings import TMP_FOLDER, TMP_FOLDER_PREFIX
@@ -27,6 +27,8 @@ class CurrentMail:
         self.metadata = mail_metadata
         self.text = get_text_from_html(mail_metadata['Body'])
         self.about = get_mail_about(mail_metadata, self.text)
+        self.attachments = self.metadata['Attachments']
+        self.prepare()
 
     def clear(self):
         if self.folder:
@@ -37,6 +39,21 @@ class CurrentMail:
         if self.mail_id:
             mark_mail_as_unread(self.mail_id)
         self.clear()
+
+    def prepare(self):
+        if len(self.attachments) == 1 and self.attachments[0].endswith('.zip'):
+            unzip_without_structure(self.attachments[0], self.folder)
+        elif len(self.attachments) == 1 and self.attachments[0].endswith('.rar'):
+            unrar(self.attachments[0], self.folder)
+        else:
+            return
+
+    def update_about(self):
+        self.about += "\nUnpacked Attachments:\n"
+        attach_files = [f for f in os.listdir(self.folder)
+                     if os.path.isfile(os.path.join(self.folder, f))]
+        for i, att in enumerate(attach_files):
+            self.about += f"{i+1}) {att}\n"
 
 
 def load_one_mail_rollback(mail_id, mail_folder):

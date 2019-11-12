@@ -17,29 +17,18 @@ env.hosts = [f'{DEPLOY_USER}@{DEPLOY_HOST}']
 
 
 def bootstrap():
-    # input('setenv')
     set_env()
     run('uname -a')
     prepare_interpreter()
-    # input('install_system_libs')
     install_system_libs()
-    # input('install_Libreoffice')
     install_libreoffice()
-    # input('create_folders')
     create_folders()
-    # input('get_src')
     get_src()
-    # input('set_secrets')
     set_secrets()
-    # input('create_virtualenv')
     create_virtualenv()
-    # input('install_venv_libs')
     install_venv_libs()
-    # input('download gecko driver')
     download_gecko_driver()
-    # input('set_service')
     set_service()
-    # input('restart_all')
     restart_all()
 
 
@@ -96,7 +85,7 @@ def install_libreoffice():
 
 def create_folders():
     _mkdir(env.REMOTE_PROJECT_PATH, use_sudo=True, chown=True)
-    _mkdir(env.REMOTE_VENV_PATH, use_sudo=True, chown=True)
+    # _mkdir(env.REMOTE_VENV_PATH, use_sudo=True, chown=True)
 
 
 def get_src():
@@ -138,7 +127,7 @@ def download_gecko_driver():
 
 
 def set_service():
-    sudo('cp /var/www/autopublisher/fabdeploy/telegrambot.service /etc/systemd/system/')
+    sudo(f'cp {env.REMOTE_PROJECT_PATH}/fabdeploy/telegrambot.service /etc/systemd/system/')
     sudo('systemctl enable telegrambot')
 
 
