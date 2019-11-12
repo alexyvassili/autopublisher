@@ -42,10 +42,10 @@ class CurrentMail:
 
     def prepare(self):
         if len(self.attachments) == 1 and self.attachments[0].endswith('.zip'):
-            unzip_without_structure(self.attachments[0], self.folder)
+            unzip_without_structure(os.path.join(self.folder, self.attachments[0]), self.folder)
         elif len(self.attachments) == 1 and self.attachments[0].endswith('.rar'):
             self.about += f"\nUnpack {self.attachments[0]} to {self.folder}\n"
-            response = unrar(self.attachments[0], self.folder)
+            response = unrar(os.path.join(self.folder, self.attachments[0]), self.folder)
             self.about += f"{response}\n"
         else:
             return
