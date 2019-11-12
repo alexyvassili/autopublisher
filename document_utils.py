@@ -4,6 +4,7 @@ import shutil
 import zipfile
 import mammoth
 import html2text
+import subprocess
 import xml.etree.ElementTree as ElementTree
 from PIL import Image
 from io import BytesIO
@@ -175,3 +176,7 @@ def get_lines_from_html(html):
 def get_text_from_html(html):
     lines = get_lines_from_html(html)
     return '\n'.join(lines)
+
+
+def unrar(rarfile, folder):
+    subprocess.call(["unrar", "x", rarfile, folder])
