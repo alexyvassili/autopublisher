@@ -1,5 +1,6 @@
 """
-    This is fabfile for deploying autopublisher on debian stretch on custom python 3.6.5
+    This is fabfile for deploying autopublisher
+    on debian stretch on custom preinstalled pyenv python
 """
 import os
 import sys
@@ -19,10 +20,6 @@ def bootstrap():
     # input('setenv')
     set_env()
     run('uname -a')
-    # input('prepare package system')
-    prepare_package_system()
-    # input('prepare_interpreter')
-    install_pydevel_packages()
     prepare_interpreter()
     # input('install_system_libs')
     install_system_libs()
@@ -64,25 +61,11 @@ def set_env():
     env.REMOTE_VENV_PATH = os.path.join(env.VENV_PATH,
                                         env.PROJECT_NAME)
     env.GIT_REPO_PATH = "https://github.com/alexyvassili/autopublisher.git"
-    env.PYTHON_VESRION = "3.6.5"
+    env.PYTHON_VESRION = "3.6.8"
     env.PYENV_PATH = f'/home/{env.USER}/.pyenv'
     env.BASE_REMOTE_NTERPRETER = f'/home/{env.USER}/.pyenv/versions/{env.PYTHON_VESRION}/bin/python'
     env.REMOTE_VENV_PATH = f'/home/{env.USER}/.pyenv/versions/{env.PROJECT_NAME}'
     env.VENV_REMOTE_PYTHON_PATH = f'/home/{env.USER}/.pyenv/versions/{env.PROJECT_NAME}/bin/python'
-
-
-def prepare_package_system():
-    if not exists('/etc/apt/sources.list.old'):
-        sudo('mv /etc/apt/sources.list /etc/apt/sources.list.old')
-        upload_template('deploy/sources.list', '/etc/apt/', use_sudo=True)
-    sudo('apt-get update && apt-get upgrade -y')
-    sudo('apt-get install -y aptitude')
-
-
-def install_pydevel_packages():
-    # Libraries for loading and installing Python
-    sudo('aptitude install -y git curl mc vim net-tools gcc build-essential '
-         'python-dev libreadline-dev libbz2-dev libssl-dev libsqlite3-dev libxslt1-dev libxml2-dev zlib1g zlib1g-dev')
 
 
 def prepare_interpreter():
@@ -101,7 +84,7 @@ def install_system_libs():
 
 def install_libreoffice():
     if not exists(SOFFICE_PATH):
-        run('wget http://download.documentfoundation.org/libreoffice/stable/6.2.4/deb/x86_64/LibreOffice_6.2.4_Linux_x86-64_deb.tar.gz -O /tmp/libreoffice.tar.gz')
+        run('wget http://download.documentfoundation.org/libreoffice/stable/6.3.3/deb/x86_64/LibreOffice_6.3.3_Linux_x86-64_deb.tar.gz -O /tmp/libreoffice.tar.gz')
         run('mkdir /tmp/libreoffice_setup')
         # распаковываем все файлы без сохранения структуры директорий
         run('tar xvzf /tmp/libreoffice.tar.gz -C /tmp/libreoffice_setup/ --strip-components 2')
