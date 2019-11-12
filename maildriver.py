@@ -44,6 +44,7 @@ class CurrentMail:
         if len(self.attachments) == 1 and self.attachments[0].endswith('.zip'):
             unzip_without_structure(self.attachments[0], self.folder)
         elif len(self.attachments) == 1 and self.attachments[0].endswith('.rar'):
+            self.about += f"\nUnpack {self.attachments[0]} to {self.folder}\n"
             unrar(self.attachments[0], self.folder)
         else:
             return
