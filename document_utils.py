@@ -8,7 +8,7 @@ import subprocess
 import xml.etree.ElementTree as ElementTree
 from PIL import Image
 from io import BytesIO
-from subprocess import call
+from subprocess import call, Popen, PIPE
 
 WORD_TMP_DIR = 'word_tmp'
 FORMATTED_FILE = 'tmp_new_rasp.docx'
@@ -178,5 +178,14 @@ def get_text_from_html(html):
     return '\n'.join(lines)
 
 
-def unrar(rarfile, folder):
+def unrar_(rarfile, folder):
     subprocess.call(["unrar", "x", rarfile, folder])
+
+
+def unrar(rarfile, folder):
+    p = Popen(["unrar", "x", rarfile, folder], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    output, err = p.communicate()
+    rc = p.returncode
+    output = output.decode()
+    err = err.decode()
+    return f"Output: \n{output}\nErrors: \n{err}\nReturn Code: {rc}"

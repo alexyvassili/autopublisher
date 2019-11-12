@@ -45,7 +45,8 @@ class CurrentMail:
             unzip_without_structure(self.attachments[0], self.folder)
         elif len(self.attachments) == 1 and self.attachments[0].endswith('.rar'):
             self.about += f"\nUnpack {self.attachments[0]} to {self.folder}\n"
-            unrar(self.attachments[0], self.folder)
+            response = unrar(self.attachments[0], self.folder)
+            self.about += f"{response}\n"
         else:
             return
         self.update_about()
