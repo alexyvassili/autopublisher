@@ -2,6 +2,7 @@ import logging
 import os
 import string
 import random
+import shutil
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction
 from telegram.ext import CommandHandler, MessageHandler, ConversationHandler, CallbackQueryHandler
@@ -45,6 +46,9 @@ def arc_loader(update, context):
         "Body": " ",
         "Attachments": [arc_name]
     }
+    if os.path.exists(mail_folder):
+        shutil.rmtree(mail_folder)
+    os.makedirs(mail_folder)
     newFile.download(os.path.join(mail_folder, arc_name))
     current_mail.init_mail(mail_id, mail_folder, mail_metadata)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Загружено "письмо"')
