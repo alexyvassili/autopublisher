@@ -166,10 +166,12 @@ def get_lines_from_html(html):
     h.blockquote = -1
     h.strong_mark = ""
     text = h.handle(html)
-    # убираем идущие подряд переносы строк
-    # и строки, состоящие из одних пробелов
-    lines = [t for t in text.split('\n')
-             if t and not re.match(r'^\s+$', t)]
+    # html2text вставляет внутри абзацев переносы строк (видимо, для красоты),
+    # а сами абзацы отделяет четырьмя переносами строк
+    # поэтому разбиваем текст на абзацы, а переносы строк внутри абзацев убираем.
+    lines = [line.strip().replace('\n', ' ')
+             for line in re.split(r'\n{2,}', text)
+             if line and not re.match(r'^\s+$', line)]
     return lines
 
 
