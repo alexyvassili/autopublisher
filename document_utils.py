@@ -1,5 +1,6 @@
 import os
 import re
+import logging
 import shutil
 import zipfile
 import mammoth
@@ -81,7 +82,8 @@ def add_cant_split_to_tr(tr: ElementTree.Element,  NS, NS_PREFIX):
         raise ValueError("Function add_cant_split get non-tr tag or broken NAMESPACE")
     trpr = tr.find('w:trPr', NS)
     if trpr is None:
-        raise ValueError("Function add_cant_split can't find trPr element in tr")
+        logging.warning("Function add_cant_split can't find trPr element in tr")
+        return
     cantSplit = trpr.find('w:cantSplit', NS)
     if cantSplit is None:
         newCantSplit  = ElementTree.Element(f'{NS_PREFIX}cantSplit', {f'{NS_PREFIX}val': 'true'})
