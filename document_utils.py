@@ -83,7 +83,8 @@ def add_cant_split_to_tr(tr: ElementTree.Element,  NS, NS_PREFIX):
     trpr = tr.find('w:trPr', NS)
     if trpr is None:
         logging.warning("Function add_cant_split can't find trPr element in tr")
-        return
+        trpr = ElementTree.Element("{%s}trPr" % NS['w'])
+        tr.append(trpr)
     cantSplit = trpr.find('w:cantSplit', NS)
     if cantSplit is None:
         newCantSplit  = ElementTree.Element(f'{NS_PREFIX}cantSplit', {f'{NS_PREFIX}val': 'true'})
