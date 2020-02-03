@@ -127,7 +127,13 @@ def get_text_for_news(current_mail):
     else:
         docx = docxs[0]
         text = get_text_from_docx(docx)
+    # Сломано письмом Кошелева от 29.01.2020
+    # Причина: тело письма не содержит заголовка новости,
+    # заголовок новости только в заголовке письма.
+    # Решение: пока не меняем диалог, просто возьмем заголовок из залоговка письма.
     title, sentences = prepare.prepare_text(text)
+    if not title:
+        title = current_mail.mail_metadata['Subject'].split("Fwd: ")[1]
     title = spell_line(title)
     try:
         spelled_sentences = [spell_line(sent) for sent in sentences]

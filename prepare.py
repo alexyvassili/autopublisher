@@ -93,7 +93,13 @@ def prepare_html_for_news(mail_folder):
 
 
 def prepare_text(text):
-    title, news_text = text.split('\n', 1)
+    try:
+        title, news_text = text.split('\n', 1)
+    except ValueError:
+        # Если в тексте один абзац и нет заголовка,
+        # вернем пустой тайтл, и возмем заголовок из заголовка письма на уровне выше
+        title = ""
+        news_text = text
     news_text = news_text.replace('\n', ' ')
     sentences = [i.text for i in sentenize(news_text)]
     return title, sentences
