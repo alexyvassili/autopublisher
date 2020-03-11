@@ -1,4 +1,5 @@
 import os
+import logging
 import imaplib
 import email
 from email.header import decode_header
@@ -99,7 +100,17 @@ def save_email(message, mail_folder):
                 filename = bts.decode(encoding)
         counter += 1
         with open(os.path.join(mail_folder, filename), 'wb') as fp:
-            fp.write(part.get_payload(decode=True))
+            # Сломано письмом Кошелева от 3 марта 2020
+            # во вложениях неопознанный .txt (читается)
+            # и неопознанный .eml (!) (ну это результат mimetypes.guess_extension см. выше)
+            # на этом .eml get_payload возвращает None и все ломается.
+            # в принципе, нам это не нужно, но само явление любопытное
+            # FIX: оборачиваем в ексепшн и создаем пустой файл
+            try:
+                fp.write(part.get_payload(decode=True))
+            except TypeError:
+                logging.warning(f"Сохранение {filename} не удалось: получен не строковый объект.")
+                fp.write(b"\n")
 
 
 def mark_as_unread(connection, mail_id: bytes):
