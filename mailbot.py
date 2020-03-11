@@ -3,7 +3,7 @@ import logging
 import maildriver
 import prepare
 import publish
-from secrets import MAIL_FROM
+from secrets import MAIL_FROM, ALTERNATE_MAIL
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CommandHandler, MessageHandler, ConversationHandler, CallbackQueryHandler
@@ -19,8 +19,7 @@ NEWS, RASP, CANCEL, YES, NO, EDIT = range(6)
 current_mail = maildriver.CurrentMail()  # Хранит состояние текущего письма
 
 
-@owner_only
-def mail_check(update, context):
+def check_mail(update, context, mail_from, name_for_msg):
     user = update.message.from_user
     logging.info("User %s started the conversation.", user.first_name)
 
@@ -32,15 +31,29 @@ def mail_check(update, context):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Проверяю почту...')
-    mail_id, mail_folder, mail_metadata = maildriver.load_most_old_mail_from(MAIL_FROM)
+    mail_id, mail_folder, mail_metadata = maildriver.load_most_old_mail_from(mail_from)
     if mail_id is None:
-        context.bot.send_message(chat_id=update.effective_chat.id, text='Новых писем от Кошелева нет!')
+        context.bot.send_message(chat_id=update.effective_chat.id, text=f'Новых писем от {name_for_msg} нет!')
         return ConversationHandler.END
 
     current_mail.init_mail(mail_id, mail_folder, mail_metadata)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Есть письмо')
     context.bot.send_message(chat_id=update.effective_chat.id, text=current_mail.about, reply_markup=reply_markup)
     return SEARCH
+
+
+@owner_only
+def from_koshelev_check_mail(update, context):
+    return check_mail(update, context, MAIL_FROM, 'Кошелева')
+
+
+@owner_only
+def from_me_check_mail(update, context):
+    """
+    Warning! Будет найдено и предложено к обработке любое письмо с моего адреса
+    Хотя я планирую добавить что-то типа if "LOTOHA" in Subject
+    """
+    return check_mail(update, context, ALTERNATE_MAIL, 'меня')
 
 
 def news(update, context):
@@ -126,7 +139,8 @@ def echo(update, context):
 
 
 mail_handler = ConversationHandler(
-        entry_points=[CommandHandler('mail', mail_check)],
+        entry_points=[CommandHandler('mail', from_koshelev_check_mail),
+                      CommandHandler('mymail', from_me_check_mail)],
         states={
             SEARCH: [CallbackQueryHandler(news, pattern='^' + str(NEWS) + '$'),
                      CallbackQueryHandler(rasp, pattern='^' + str(RASP) + '$'),
