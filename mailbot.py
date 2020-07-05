@@ -12,9 +12,9 @@ from telegramlib import owner_only
 
 
 # Stages
-SEARCH, TEXT, PUBLISH, RASPLOAD = range(4)
+SEARCH, TEXT, PUBLISH, PUBLISH_IMG, RASPLOAD = range(5)
 # Callback data
-NEWS, RASP, CANCEL, YES, NO, EDIT = range(6)
+NEWS, RASP, IMG, CANCEL, YES, NO, EDIT = range(7)
 
 current_mail = maildriver.CurrentMail()  # Хранит состояние текущего письма
 
@@ -26,6 +26,7 @@ def check_mail(update, context, mail_from, name_for_msg):
     keyboard = [
         [InlineKeyboardButton("News", callback_data=str(NEWS)),
          InlineKeyboardButton("Rasp", callback_data=str(RASP)),
+         InlineKeyboardButton("Img", callback_data=str(IMG)),
          InlineKeyboardButton("Cancel", callback_data=str(CANCEL))
          ]
     ]
@@ -118,6 +119,29 @@ def rasp(update, context):
     return ConversationHandler.END
 
 
+def img(update, context):
+    current_mail.images = maildriver.get_images_for_news(current_mail)
+    if current_mail.images:
+        imgs = "\n".join(f"{i+1}) {img}" for i, img in enumerate(current_mail.images))
+    else:
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 text="Картинок не нашел :(",
+                                 )
+        return ConversationHandler.END
+    keyboard = [
+        [InlineKeyboardButton("Publish", callback_data=str(YES)),
+         # InlineKeyboardButton("Edit", callback_data=str(EDIT)),
+         InlineKeyboardButton("Cancel", callback_data=str(NO)),
+         ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             text=imgs,
+                             reply_markup=reply_markup
+                             )
+    return PUBLISH_IMG
+
+
 def publish_news(update, context):
     html = prepare.html_from_sentences(current_mail.sentences)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Публикуем')
@@ -144,6 +168,7 @@ mail_handler = ConversationHandler(
         states={
             SEARCH: [CallbackQueryHandler(news, pattern='^' + str(NEWS) + '$'),
                      CallbackQueryHandler(rasp, pattern='^' + str(RASP) + '$'),
+                     CallbackQueryHandler(img, pattern='^' + str(IMG) + '$'),
                      CallbackQueryHandler(cancel, pattern='^' + str(CANCEL) + '$'),
                      ],
             TEXT: [CallbackQueryHandler(news_prepare, pattern='^' + str(YES) + '$'),
