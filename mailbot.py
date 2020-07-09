@@ -118,22 +118,19 @@ def image_expire(update, context):
                                  )
         return ConversationHandler.END
 
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text=f"<{text}>",
-                             )
     try:
         day, month = text.split(' ')
         day = int(day)
     except ValueError:
         context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text="Неправильный день",
+                                 text="Неправильный день, попробуй еще",
                                  )
-        return ConversationHandler.END
+        return IMG_EXPIRE
     if month not in MONTHS:
         context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text="Неправильный месяц",
+                                 text="Неправильный месяц, попробуй еще",
                                  )
-        return ConversationHandler.END
+        return IMG_EXPIRE
     year = datetime.today().year
     month_num = MONTHS[month]
     dt = datetime(year, month_num, day)
@@ -170,7 +167,7 @@ def img(update, context):
     if current_mail.images:
         if len(current_mail.images) > 1:
             context.bot.send_message(chat_id=update.effective_chat.id,
-                                     text="Слишком много картинок",
+                                     text="Слишком много картинок, отмена.",
                                      )
             return ConversationHandler.END
         current_mail.mainpage_img = current_mail.images[0]
