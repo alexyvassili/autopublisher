@@ -112,13 +112,22 @@ def edit_save(update, context):
 
 def image_expire(update, context):
     text = update.message.text
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             text=f"<{text}>",
+                             )
     try:
         day, month = text.split(' ')
         day = int(day)
     except ValueError:
-        return "BAD NUM"
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 text="Неправильный день",
+                                 )
+        return ConversationHandler.END
     if month not in MONTHS:
-        return "BAD MONTH"
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 text="Неправильный месяц",
+                                 )
+        return ConversationHandler.END
     year = datetime.today().year
     dt = datetime(year, month, day)
     if dt < datetime.today():
