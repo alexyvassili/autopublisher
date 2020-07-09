@@ -151,7 +151,7 @@ def image_expire(update, context):
                              text=msg,
                              reply_markup=reply_markup
                              )
-    return PUBLISH
+    return PUBLISH_MAINPAGE_IMG
 
 
 def rasp(update, context):
