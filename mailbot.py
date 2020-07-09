@@ -112,6 +112,12 @@ def edit_save(update, context):
 
 def image_expire(update, context):
     text = update.message.text
+    if "отмена" in text.lower():
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 text="Отмена",
+                                 )
+        return ConversationHandler.END
+
     context.bot.send_message(chat_id=update.effective_chat.id,
                              text=f"<{text}>",
                              )
@@ -131,7 +137,7 @@ def image_expire(update, context):
     year = datetime.today().year
     dt = datetime(year, month, day)
     if dt < datetime.today():
-        dt = datetime(year, month, day)
+        dt = datetime(year, MONTHS[month], day)
     current_mail.image_expired = dt.isoformat()
     msg = f"Картинка: {current_mail.mainpage_img}\nДо: {current_mail.image_expired}"
     keyboard = [
