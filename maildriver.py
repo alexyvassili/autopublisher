@@ -20,6 +20,8 @@ class CurrentMail:
         self.text_ready = None
         self.images = None
         self.about = None
+        self.mainpage_img = None
+        self.image_expired = None
 
     def init_mail(self, mail_id, mail_folder, mail_metadata):
         self.mail_id = mail_id

@@ -1,9 +1,11 @@
 import logging
+from datetime import datetime
 
 import maildriver
 import prepare
 import publish
 from secrets import MAIL_FROM, ALTERNATE_MAIL
+from settings import MONTHS
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CommandHandler, MessageHandler, ConversationHandler, CallbackQueryHandler
@@ -12,7 +14,7 @@ from telegramlib import owner_only
 
 
 # Stages
-SEARCH, TEXT, PUBLISH, PUBLISH_IMG, RASPLOAD = range(5)
+SEARCH, TEXT, IMG_EXPIRE, PUBLISH, PUBLISH_MAINPAGE_IMG, RASPLOAD = range(5)
 # Callback data
 NEWS, RASP, IMG, CANCEL, YES, NO, EDIT = range(7)
 
@@ -108,6 +110,34 @@ def edit_save(update, context):
     return news(update, context)
 
 
+def image_expire(update, context):
+    text = update.message.text
+    try:
+        day, month = text.split(' ')
+        day = int(day)
+    except ValueError:
+        return "BAD NUM"
+    if month not in MONTHS:
+        return "BAD MONTH"
+    year = datetime.today().year
+    dt = datetime(year, month, day)
+    if dt < datetime.today():
+        dt = datetime(year, month, day)
+    current_mail.image_expired = dt.isoformat()
+    msg = f"Картинка: {current_mail.mainpage_img}\nДо: {current_mail.image_expired}"
+    keyboard = [
+        [InlineKeyboardButton("Publish", callback_data=str(YES)),
+         InlineKeyboardButton("Cancel", callback_data=str(NO)),
+         ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             text=msg,
+                             reply_markup=reply_markup
+                             )
+    return PUBLISH
+
+
 def rasp(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text='Подготовка...')
     jpegs = prepare.rasp(current_mail.folder)
@@ -122,24 +152,23 @@ def rasp(update, context):
 def img(update, context):
     current_mail.images = maildriver.get_images_for_news(current_mail)
     if current_mail.images:
+        if len(current_mail.images) > 1:
+            context.bot.send_message(chat_id=update.effective_chat.id,
+                                     text="Слишком много картинок",
+                                     )
+            return ConversationHandler.END
+        current_mail.mainpage_img = current_mail.images[0]
         imgs = "\n".join(f"{i+1}) {img}" for i, img in enumerate(current_mail.images))
     else:
         context.bot.send_message(chat_id=update.effective_chat.id,
                                  text="Картинок не нашел :(",
                                  )
         return ConversationHandler.END
-    keyboard = [
-        [InlineKeyboardButton("Publish", callback_data=str(YES)),
-         # InlineKeyboardButton("Edit", callback_data=str(EDIT)),
-         InlineKeyboardButton("Cancel", callback_data=str(NO)),
-         ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
     context.bot.send_message(chat_id=update.effective_chat.id,
-                             text=imgs,
-                             reply_markup=reply_markup
-                             )
-    return PUBLISH_IMG
+                             text=imgs)
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             text="До какого числа показывать картинку?")
+    return IMG_EXPIRE
 
 
 def publish_news(update, context):
@@ -148,6 +177,17 @@ def publish_news(update, context):
     url = publish.news(current_mail.title, html, current_mail.images)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Опубликовано!')
     context.bot.send_message(chat_id=update.effective_chat.id, text=url)
+    current_mail.clear()
+    return ConversationHandler.END
+
+
+def  publish_mainpage_img(update, context):
+    # html = prepare.html_from_sentences(current_mail.sentences)
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Публикуем')
+    # url = publish.news(current_mail.title, html, current_mail.images)
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             text='Опубликовано!')
+    # context.bot.send_message(chat_id=update.effective_chat.id, text=url)
     current_mail.clear()
     return ConversationHandler.END
 
@@ -176,7 +216,11 @@ mail_handler = ConversationHandler(
                    MessageHandler(Filters.text, edit_save),
                    CallbackQueryHandler(cancel, pattern='^' + str(CANCEL) + '$'),
                    ],
+            IMG_EXPIRE: [MessageHandler(Filters.text, image_expire)],
             PUBLISH: [CallbackQueryHandler(publish_news, pattern='^' + str(YES) + '$'),
+                      CallbackQueryHandler(cancel, pattern='^' + str(NO) + '$'),
+                      ],
+            PUBLISH_MAINPAGE_IMG: [CallbackQueryHandler(publish_mainpage_img, pattern='^' + str(YES) + '$'),
                       CallbackQueryHandler(cancel, pattern='^' + str(NO) + '$'),
                       ],
         },
