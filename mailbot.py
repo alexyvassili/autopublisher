@@ -135,9 +135,10 @@ def image_expire(update, context):
                                  )
         return ConversationHandler.END
     year = datetime.today().year
-    dt = datetime(year, month, day)
+    month_num = MONTHS[month]
+    dt = datetime(year, month_num, day)
     if dt < datetime.today():
-        dt = datetime(year, MONTHS[month], day)
+        dt = datetime(year, month_num, day)
     current_mail.image_expired = dt.isoformat()
     msg = f"Картинка: {current_mail.mainpage_img}\nДо: {current_mail.image_expired}"
     keyboard = [
