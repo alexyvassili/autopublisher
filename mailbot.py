@@ -14,7 +14,7 @@ from telegramlib import owner_only
 
 
 # Stages
-SEARCH, TEXT, IMG_EXPIRE, PUBLISH, PUBLISH_MAINPAGE_IMG, RASPLOAD = range(5)
+SEARCH, TEXT, IMG_EXPIRE, PUBLISH, PUBLISH_MAINPAGE_IMG, RASPLOAD = range(6)
 # Callback data
 NEWS, RASP, IMG, CANCEL, YES, NO, EDIT = range(7)
 
@@ -181,7 +181,7 @@ def publish_news(update, context):
     return ConversationHandler.END
 
 
-def  publish_mainpage_img(update, context):
+def publish_mainpage_img(update, context):
     # html = prepare.html_from_sentences(current_mail.sentences)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Публикуем')
     # url = publish.news(current_mail.title, html, current_mail.images)
