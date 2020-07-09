@@ -92,7 +92,7 @@ def get_src(branch=None):
     if not exists(os.path.join(env.REMOTE_PROJECT_PATH, '.git')):
         run(f'git clone {env.GIT_REPO_PATH} {env.REMOTE_PROJECT_PATH}')
     else:
-        run(f'cd {env.REMOTE_PROJECT_PATH}; git pull')
+        run(f'cd {env.REMOTE_PROJECT_PATH}; git checkout master; git pull')
 
     if branch:
         run(f'cd {env.REMOTE_PROJECT_PATH}; git checkout {branch}; git pull')
