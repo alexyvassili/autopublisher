@@ -26,4 +26,4 @@ MONTHS_LIST = [
     "декабря",
 ]
 
-MONTHS = {i+1: month for i, month in enumerate(MONTHS_LIST)}
+MONTHS = {month: i + 1 for i, month in enumerate(MONTHS_LIST)}
