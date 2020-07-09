@@ -32,10 +32,10 @@ def bootstrap():
     restart_all()
 
 
-def deploy():
+def deploy(branch=None):
     set_env()
     run('uname -a')
-    get_src()
+    get_src(branch)
     set_secrets()
     install_venv_libs()
     restart_all()
@@ -88,11 +88,14 @@ def create_folders():
     # _mkdir(env.REMOTE_VENV_PATH, use_sudo=True, chown=True)
 
 
-def get_src():
+def get_src(branch=None):
     if not exists(os.path.join(env.REMOTE_PROJECT_PATH, '.git')):
         run(f'git clone {env.GIT_REPO_PATH} {env.REMOTE_PROJECT_PATH}')
     else:
         run(f'cd {env.REMOTE_PROJECT_PATH}; git pull')
+
+    if branch:
+        run(f'cd {env.REMOTE_PROJECT_PATH}; git checkout {branch}; git pull')
 
 
 def set_secrets():
