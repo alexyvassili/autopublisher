@@ -33,6 +33,10 @@ def bootstrap():
 
 
 def deploy(branch=None):
+    """
+    Deploy bot to server
+    You can set needed git  branch as fab deploy:branch="branch_name"
+    """
     set_env()
     run('uname -a')
     get_src(branch)
