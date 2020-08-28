@@ -12,7 +12,9 @@ SOFFICE_PATH = "/opt/libreoffice6.3/program/soffice"
 IMG_FOR_NEWS_FOLDER = 'img'
 WIDE_SIDE_IMAGE = 1024
 HTML_P_START = """<p style="text-align: justify; text-indent: 20px;"><span style="font-size: 14pt; line-height: 115%; font-family: 'Times New Roman', 'serif'; color: #000000;">"""
+HTML_I_START = """<p style="text-align: justify; text-indent: 20px;"><span style="font-size: 13pt; line-height: 115%; font-family: 'Times New Roman', 'serif'; color: #000000;"><i>"""
 HTML_P_END = '</span></p>'
+HTML_I_END = '</i></span></p>'
 
 
 class PrepareError(Exception):
@@ -108,6 +110,13 @@ def prepare_text(text):
 def html_from_sentences(sentences):
     paragraphs = []
     for line in sentences:
+        if line.startswith("_"):
+            # Письмо Кошелева от 25.08.2020:
+            # В тексте новости приписка курсивом, который определился как
+            # предложение, обрамленное подчеркиваниями.
+            line = line.strip("_")
+            paragraphs.append(f"{HTML_I_START}{line}{HTML_I_END}")
+            continue
         paragraphs.append(f"{HTML_P_START}{line}{HTML_P_END}")
     return '\n'.join(paragraphs)
 
