@@ -12,7 +12,7 @@ SOFFICE_PATH = "/opt/libreoffice6.3/program/soffice"
 IMG_FOR_NEWS_FOLDER = 'img'
 WIDE_SIDE_IMAGE = 1024
 HTML_P_START = """<p style="text-align: justify; text-indent: 20px;"><span style="font-size: 14pt; line-height: 115%; font-family: 'Times New Roman', 'serif'; color: #000000;">"""
-HTML_I_START = """<p style="text-align: justify; text-indent: 20px;"><span style="font-size: 13pt; line-height: 115%; font-family: 'Times New Roman', 'serif'; color: #000000;"><i>"""
+HTML_I_START = """<p style="text-align: justify; text-indent: 20px;"><span style="font-size: 12pt; line-height: 115%; font-family: 'Times New Roman', 'serif'; color: #000000;"><i>"""
 HTML_P_END = '</span></p>'
 HTML_I_END = '</i></span></p>'
 
