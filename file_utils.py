@@ -6,7 +6,7 @@ from transliterate import transliterate, replace_non_alphabetic_symbols
 def format_jpeg_name(jpeg_name):
     jpeg_name = transliterate(jpeg_name)
     jpeg_name = replace_non_alphabetic_symbols(jpeg_name)
-    return jpeg_name
+    return jpeg_name.lower()
 
 
 def get_file_size_mb(file_name):

@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 import shutil
@@ -77,6 +78,16 @@ def prepare_jpegs_for_news(jpegs, folder, jpegs_folder):
             shutil.copyfile(jpeg_fullname, new_jpeg_fullname)
         jpegs_for_news.append(new_jpeg_fullname)
     return jpegs_for_news
+
+
+def prepare_mainpage_jpeg(image: 'imagebot: Image'):
+    size = get_file_size_mb(image.path)
+
+    if size > 1:
+        logging.info("Mainpage image size is greater then 1 MB, resizing...")
+        tmp_image_path = os.path.join(image.folder, "resized.jpg")
+        resize_jpeg_on_wide_size(image.path, tmp_image_path, WIDE_SIDE_IMAGE)
+        shutil.move(tmp_image_path, image.path)
 
 
 def prepare_html_for_news(mail_folder):

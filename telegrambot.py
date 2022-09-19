@@ -11,7 +11,7 @@ from telegramlib import owner_only
 from customfilters import YandexCheckFilter
 from autopublisher import telegram_yandex_check
 from mailbot import mail_handler
-from zipbot import arc_handler
+from imagebot import image_handler
 from secrets import BOT_TOKEN, BOT_PROXY, DIALOGFLOW_API_CLIENT_TOKEN
 
 
@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(mail_handler)
-    dispatcher.add_handler(arc_handler)
+    dispatcher.add_handler(image_handler)
     dispatcher.add_handler(yandex_handler)
     dispatcher.add_handler(bot_handler)
     dispatcher.add_handler(echo_handler)
