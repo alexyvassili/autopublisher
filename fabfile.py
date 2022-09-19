@@ -68,7 +68,7 @@ def prepare_interpreter():
 
 
 def install_system_libs():
-    sudo('aptitude install -y imagemagick git xvfb x11-utils firefox-esr default-jre unrar')
+    sudo('aptitude install -y imagemagick git xvfb x11-utils firefox-esr default-jre libmagic1 unrar')
 
 
 def install_libreoffice():
