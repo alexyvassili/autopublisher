@@ -15,6 +15,14 @@ from settings import *
 display = None
 
 
+JPEG_TEMPLATE = """<!-- MAINPAGE JPEG -->
+<!-- START DATE: {start_date}, END DATE: {end_date} -->
+<h2><center><img src="{jpeg}" alt="" width="600" /></center></h2>
+<!-- END OF MAINPAGE JPEG -->
+
+"""
+
+
 class title_not_contains(object):
     """ An expectation for checking that the title contains a case-sensitive
     substring. title is the fragment of title expected
@@ -119,6 +127,29 @@ def news(title, html, jpegs):
     driver.find_element_by_id("edit-submit").click()
 
     wait.until(title_not_contains("Создание материала"))
+    sleep(1)
+    url = driver.current_url
+    close_driver(driver)
+    return url
+
+
+def mainpage(image: 'imagebot.Image'):
+    driver = login_to_site()
+    wait = WebDriverWait(driver, 20)
+    load_jpegs_to_site(driver, image.folder, [image.name])
+    driver.get(SITE_MAINPAGE_EDIT)
+    text_area = driver.find_element_by_id("edit-body-und-0-value")
+    text = text_area.text
+    jpeg_html = JPEG_TEMPLATE.format(
+        start_date=image.start_date,
+        end_date=image.end_date,
+        jpeg=f"/sites/default/files/{image.name}",
+    )
+    html = jpeg_html + text
+    text_area.clear()
+    text_area.send_keys(html)
+    driver.find_element_by_id("edit-submit").click()
+    wait.until(title_not_contains("Редактирование"))
     sleep(1)
     url = driver.current_url
     close_driver(driver)
