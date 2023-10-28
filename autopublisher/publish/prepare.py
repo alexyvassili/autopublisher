@@ -10,7 +10,7 @@ from autopublisher.utils.document import format_rasp_docx, cd, resize_jpeg_on_wi
 from autopublisher.utils.file import format_jpeg_name, get_file_size_mb, get_files_for_extension, get_fullpath_files_for_extension
 
 
-SOFFICE_PATH = "/opt/libreoffice6.3/program/soffice"
+SOFFICE_PATH = "/opt/libreoffice7.6/program/soffice"
 IMG_FOR_NEWS_FOLDER = 'img'
 WIDE_SIDE_IMAGE = 1024
 HTML_P_START = """<p style="text-align: justify; text-indent: 20px;"><span style="font-size: 14pt; line-height: 115%; font-family: 'Times New Roman', 'serif'; color: #000000;">"""
