@@ -1,6 +1,6 @@
-CI_PROJECT_NAME ?= $(shell python3.8 setup.py --name)
+CI_PROJECT_NAME ?= $(shell python3.7 setup.py --name)
 
-VERSION = $(shell python3.8 setup.py --version | tr '+' '-')
+VERSION = $(shell python3.7 setup.py --version | tr '+' '-')
 PROJECT_PATH := $(shell echo $(CI_PROJECT_NAME) | tr '-' '_')
 
 CI_REGISTRY ?= registry.yandex.net
@@ -29,12 +29,12 @@ all:
 
 
 $(PROJECT_PATH)/version.py:
-	python3.8 bump.py $(PROJECT_PATH)/version.py
+	python3.7 bump.py $(PROJECT_PATH)/version.py
 
 bump: clean $(PROJECT_PATH)/version.py
 
 sdist: bump
-	python3.8 setup.py sdist
+	python3.7 setup.py sdist
 
 #build:
 #	docker build -t $(CI_PROJECT_NAME):$(VERSION) .

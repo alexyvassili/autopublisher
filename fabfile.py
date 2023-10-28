@@ -24,11 +24,17 @@ def bootstrap():
     create_folders()
     get_src()
     set_secrets()
+    input()
     create_virtualenv()
+    input()
     install_venv_libs()
+    input()
     download_gecko_driver()
+    input()
     install()
+    input()
     set_service()
+    input()
     restart_all()
 
 
@@ -52,9 +58,9 @@ def set_env():
     env.REMOTE_VENV_PATH = os.path.join(env.VENV_PATH,
                                         env.PROJECT_NAME)
     env.GIT_REPO_PATH = "https://github.com/alexyvassili/autopublisher.git"
-    env.PYTHON_VESRION = "3.6.8"
+    env.PYTHON_VERSION = "3.7.5"
     env.PYENV_PATH = f'/home/{env.USER}/.pyenv'
-    env.BASE_REMOTE_NTERPRETER = f'/home/{env.USER}/.pyenv/versions/{env.PYTHON_VESRION}/bin/python'
+    env.BASE_REMOTE_NTERPRETER = f'/home/{env.USER}/.pyenv/versions/{env.PYTHON_VERSION}/bin/python'
     env.REMOTE_VENV_PATH = f'/home/{env.USER}/.pyenv/versions/{env.PROJECT_NAME}'
     env.VENV_REMOTE_PYTHON_PATH = f'/home/{env.USER}/.pyenv/versions/{env.PROJECT_NAME}/bin/python'
 
@@ -65,8 +71,8 @@ def prepare_interpreter():
         run("curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash")
 
     if not exists(env.BASE_REMOTE_NTERPRETER):
-        print(f'Interpreter not found, load Python {env.PYTHON_VESRION}')
-        run(f"{env.PYENV_PATH}/bin/pyenv install {env.PYTHON_VESRION}")
+        print(f'Interpreter not found, load Python {env.PYTHON_VERSION}')
+        run(f"{env.PYENV_PATH}/bin/pyenv install {env.PYTHON_VERSION}")
 
 
 def install_system_libs():
@@ -102,12 +108,12 @@ def set_secrets():
     #     os.path.join(env.PROJECT_NAME, 'secrets.py'),
     #     os.path.join(env.REMOTE_PROJECT_PATH, env.PROJECT_NAME)
     # )
-    upload_template('secrets.py', env.SECRETS_REMOTE_PATH)
+    upload_template('autopublisher/secrets.py', env.SECRETS_REMOTE_PATH)
 
 
 def create_virtualenv():
     if not exists(env.VENV_REMOTE_PYTHON_PATH):
-        run(f"{env.PYENV_PATH}/bin/pyenv virtualenv {env.PYTHON_VESRION} {env.PROJECT_NAME}")
+        run(f"{env.PYENV_PATH}/bin/pyenv virtualenv {env.PYTHON_VERSION} {env.PROJECT_NAME}")
         pip = os.path.join(env.REMOTE_VENV_PATH, 'bin', 'pip3')
         run(f'{pip} install --upgrade pip')
 

@@ -17,6 +17,9 @@
 
 ---
 
+☑️ &mdash; Upgrade Python version to 3.7  
+☑️ &mdash; Upgrade Python version to 3.8 (optional)  
+
 ☑️ &mdash; Upgrade package versions in `requirements.txt`  
 ☑️ &mdash; Upgrade Python version to 3.12  
 ☑️ &mdash; Upgrade telegram lib  
@@ -26,7 +29,9 @@
 
 ---
 
-☑️ &mdash; Move project to ya-service-template  
-☑️ &mdash; Build project as Python package  
+☑️ &mdash; Build project as setup.py Python package 
+
+☑️ &mdash; Move project to ya-service-template   
+☑️ &mdash; Build project as poetry Python package  
 ☑️ &mdash; Build project as Docker package  
 ☑️ &mdash; Update secrets handling  
