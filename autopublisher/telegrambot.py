@@ -60,7 +60,7 @@ echo_handler = MessageHandler(Filters.text, echo)
 any_handler = MessageHandler(Filters.all, any_answer)  # Заглушка на всё остальное
 
 
-if __name__ == "__main__":
+def main():
     updater = Updater(token=BOT_TOKEN, use_context=True, request_kwargs=BOT_PROXY)
     dispatcher = updater.dispatcher
 
@@ -78,3 +78,7 @@ if __name__ == "__main__":
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
+
+
+if __name__ == "__main__":
+    main()
