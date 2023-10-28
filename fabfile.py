@@ -27,6 +27,7 @@ def bootstrap():
     create_virtualenv()
     install_venv_libs()
     download_gecko_driver()
+    install()
     set_service()
     restart_all()
 
@@ -37,6 +38,7 @@ def deploy():
     get_src()
     set_secrets()
     install_venv_libs()
+    install()
     restart_all()
 
 
@@ -46,6 +48,7 @@ def set_env():
     env.VENV_PATH = f'/home/{env.USER}/.pyenv/versions'
     env.PROJECT_NAME = 'autopublisher'
     env.REMOTE_PROJECT_PATH = os.path.join(env.BASE_PATH, env.PROJECT_NAME)
+    env.SECRETS_REMOTE_PATH = os.path.join(env.BASE_PATH, env.PROJECT_NAME, env.PROJECT_NAME)
     env.REMOTE_VENV_PATH = os.path.join(env.VENV_PATH,
                                         env.PROJECT_NAME)
     env.GIT_REPO_PATH = "https://github.com/alexyvassili/autopublisher.git"
@@ -99,7 +102,7 @@ def set_secrets():
     #     os.path.join(env.PROJECT_NAME, 'secrets.py'),
     #     os.path.join(env.REMOTE_PROJECT_PATH, env.PROJECT_NAME)
     # )
-    upload_template('secrets.py', env.REMOTE_PROJECT_PATH)
+    upload_template('secrets.py', env.SECRETS_REMOTE_PATH)
 
 
 def create_virtualenv():
@@ -123,6 +126,10 @@ def download_gecko_driver():
         run('rm /tmp/geckodriver/*')
         run('rmdir /tmp/geckodriver')
         run('rm /tmp/geckodriver.tar.gz')
+
+
+def install():
+    run(f'cd {env.REMOTE_PROJECT_PATH} && make sdist && {env.VENV_REMOTE_PYTHON_PATH} -m pip install dist/{env.PROJECT_NAME}*')
 
 
 def set_service():
