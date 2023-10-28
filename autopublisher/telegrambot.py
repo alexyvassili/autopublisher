@@ -9,7 +9,7 @@ from telegram.ext import Filters
 
 from telegramlib import owner_only
 from customfilters import YandexCheckFilter
-from autopublisher import telegram_yandex_check
+from autopublish import telegram_yandex_check
 from mailbot import mail_handler
 from imagebot import image_handler
 from secrets import BOT_TOKEN, BOT_PROXY, DIALOGFLOW_API_CLIENT_TOKEN
