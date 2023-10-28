@@ -19,12 +19,13 @@
 
 ☑️ &mdash; Upgrade Python version to 3.7  
 ☑️ &mdash; Upgrade Python version to 3.8 (optional)  
+☑️ &mdash; Upgrade Python version to 3.11  
 
 ☑️ &mdash; Upgrade package versions in `requirements.txt`  
 ☑️ &mdash; Upgrade Python version to 3.12  
 ☑️ &mdash; Upgrade telegram lib  
 ☑️ &mdash; Upgrade to async  
-☑️ &mdash; Upgrade Selenium  
+☑️ &mdash; Upgrade Selenium to version 4
 ☑️ &mdash; Upgrade LibreOffice  
 
 ---
