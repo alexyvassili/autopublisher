@@ -1,8 +1,8 @@
 import os
 import logging
 import shutil
-import mail
 
+import autopublisher.mail.mail as mail
 import autopublisher.publish.prepare as prepare
 from autopublisher.utils.document import docx2html, get_text_from_html, unzip_without_structure, unrar
 from autopublisher.utils.spelling import spell_line

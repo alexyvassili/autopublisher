@@ -27,24 +27,24 @@ all:
 	@exit 0
 
 
-#
-#$(PROJECT_PATH)/version.py:
-#	python3.8 bump.py $(PROJECT_PATH)/version.py package.json
-#
-#bump: clean $(PROJECT_PATH)/version.py
-#
-#sdist: bump
-#	python3.8 setup.py sdist
-#
+
+$(PROJECT_PATH)/version.py:
+	python3.8 bump.py $(PROJECT_PATH)/version.py
+
+bump: clean $(PROJECT_PATH)/version.py
+
+sdist: bump
+	python3.8 setup.py sdist
+
 #build:
 #	docker build -t $(CI_PROJECT_NAME):$(VERSION) .
-#
-#clean:
-#	rm -fr *.egg-info dist $(PROJECT_PATH)/version.py
-#
-#clean-pyc:
-#	find . -iname '*.pyc' -delete
-#
+
+clean:
+	rm -fr *.egg-info dist $(PROJECT_PATH)/version.py
+
+clean-pyc:
+	find . -iname '*.pyc' -delete
+
 #lint:
 #	docker run --workdir /app --rm -v $(shell pwd):/app:ro $(LINTER_IMAGE) \
 #		pylama
@@ -60,4 +60,4 @@ all:
 
 
 develop: clean
-	~/.python3/venvs/autopublisher/pip install -Ue '.[develop]'
+	~/.python3/venvs/autopublisher/bin/pip install -Ue '.[develop]'
