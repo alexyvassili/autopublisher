@@ -24,17 +24,11 @@ def bootstrap():
     create_folders()
     get_src()
     set_secrets()
-    input()
     create_virtualenv()
-    input()
     install_venv_libs()
-    input()
     download_gecko_driver()
-    input()
     install()
-    input()
     set_service()
-    input()
     restart_all()
 
 
@@ -58,15 +52,17 @@ def set_env():
     env.REMOTE_VENV_PATH = os.path.join(env.VENV_PATH, env.PROJECT_NAME)
     env.GIT_REPO_PATH = "https://github.com/alexyvassili/autopublisher.git"
     env.PYTHON_VERSION = "3.11"
-    env.BASE_REMOTE_INTERPRETER = f'/usr/bin/{env.PYTHON_VERSION}'
+    env.BASE_REMOTE_INTERPRETER = f'/usr/bin/python{env.PYTHON_VERSION}'
     env.VENV_REMOTE_PYTHON_PATH = f'{env.REMOTE_VENV_PATH}/bin/python3'
 
 
 def check_interpreter():
+    print(f'Check {env.BASE_REMOTE_INTERPRETER}', end='...')
     if not exists(env.BASE_REMOTE_INTERPRETER):
-        print(f'Interpreter not found, load Python {env.PYTHON_VERSION}')
+        print(f'error.\nInterpreter not found, load Python {env.PYTHON_VERSION}')
         import sys
         sys.exit(1)
+    print('OK')
 
 
 def install_system_libs():
@@ -109,6 +105,8 @@ def set_secrets():
 
 def create_virtualenv():
     if not exists(env.VENV_REMOTE_PYTHON_PATH):
+        sudo('aptitude update')
+        sudo('aptitude install -y python3.11-venv python3-pip')
         run(f"python3.11 -m venv {env.REMOTE_VENV_PATH}")
         pip = os.path.join(env.REMOTE_VENV_PATH, 'bin', 'pip3')
         run(f'{pip} install --upgrade pip')
