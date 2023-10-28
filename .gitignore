@@ -105,6 +105,8 @@ venv.bak/
 
 .idea/
 
+.bak
+
 secrets.py
 
 version.py
