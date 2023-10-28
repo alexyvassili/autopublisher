@@ -3,14 +3,13 @@
     on debian stretch on custom preinstalled pyenv python
 """
 import os
-import sys
 
 from fabric.state import env
-from fabric.api import cd, run, sudo, settings
+from fabric.api import run, sudo
 from fabric.contrib.files import exists, upload_template
 
-from secrets import DEPLOY_HOST, DEPLOY_USER
-from prepare import SOFFICE_PATH
+from autopublisher.secrets import DEPLOY_HOST, DEPLOY_USER
+from autopublisher.publish.prepare import SOFFICE_PATH
 
 
 env.hosts = [f'{DEPLOY_USER}@{DEPLOY_HOST}']

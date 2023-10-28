@@ -1,6 +1,6 @@
 import os
 
-from transliterate import transliterate, replace_non_alphabetic_symbols
+from autopublisher.utils.transliterate import transliterate, replace_non_alphabetic_symbols
 
 
 def format_jpeg_name(jpeg_name):

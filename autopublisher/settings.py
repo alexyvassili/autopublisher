@@ -1,4 +1,4 @@
-from secrets import SITE_DOMAIN
+from autopublisher.secrets import SITE_DOMAIN
 
 SERVER_MODE = True
 

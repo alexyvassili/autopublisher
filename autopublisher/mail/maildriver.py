@@ -2,11 +2,12 @@ import os
 import logging
 import shutil
 import mail
-import prepare
-from document_utils import docx2html, get_text_from_html, unzip_without_structure, unrar
-from spelling import spell_line
 
-from settings import TMP_FOLDER, TMP_FOLDER_PREFIX
+import autopublisher.publish.prepare as prepare
+from autopublisher.utils.document import docx2html, get_text_from_html, unzip_without_structure, unrar
+from autopublisher.utils.spelling import spell_line
+
+from autopublisher.settings import TMP_FOLDER, TMP_FOLDER_PREFIX
 
 
 class CurrentMail:

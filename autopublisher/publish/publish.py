@@ -8,9 +8,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
+from autopublisher.secrets import *
+from autopublisher.settings import *
 
-from secrets import *
-from settings import *
 
 display = None
 

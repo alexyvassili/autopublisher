@@ -6,7 +6,7 @@ from email.header import decode_header
 import mimetypes
 import shutil
 
-from secrets import MAIL_SERVER, MAIL_LOGIN, MAIL_PASSWORD
+from autopublisher.secrets import MAIL_SERVER, MAIL_LOGIN, MAIL_PASSWORD
 
 
 def get_connection():

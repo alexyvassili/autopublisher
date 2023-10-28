@@ -9,14 +9,14 @@ import telegram
 from telegram import ChatAction
 from telegram.ext import CommandHandler, MessageHandler, ConversationHandler
 from telegram.ext import Filters
-from telegramlib import owner_only
 
-from mailbot import TEXT, echo
-from file_utils import format_jpeg_name
-from dateparse import add_date
-from publish import mainpage
+from autopublisher.utils.telegram import owner_only
+from autopublisher.bot.mailbot import TEXT, echo
+from autopublisher.utils.file import format_jpeg_name
+from autopublisher.utils.dateparse import add_date
+from autopublisher.publish.publish import mainpage
+from autopublisher.settings import TMP_FOLDER, TMP_FOLDER_PREFIX
 
-from settings import TMP_FOLDER, TMP_FOLDER_PREFIX
 
 try:
     import magic
