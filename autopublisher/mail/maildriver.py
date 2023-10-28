@@ -1,7 +1,7 @@
 import os
 import logging
 import shutil
-import connection
+import mail
 import prepare
 from document_utils import docx2html, get_text_from_html, unzip_without_structure, unrar
 from spelling import spell_line
