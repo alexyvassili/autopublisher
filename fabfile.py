@@ -9,10 +9,12 @@ from fabric.api import run, sudo
 from fabric.contrib.files import exists, upload_template
 
 from autopublisher.secrets import DEPLOY_HOST, DEPLOY_USER
-from autopublisher.publish.prepare import SOFFICE_PATH
 
 
 env.hosts = [f'{DEPLOY_USER}@{DEPLOY_HOST}']
+
+# для Fabric SOFFICE_PATH всегда соответствует Linux
+SOFFICE_PATH = "/opt/libreoffice7.6/program/soffice"
 
 
 def bootstrap():
