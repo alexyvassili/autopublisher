@@ -134,7 +134,7 @@ def get_text_for_news(current_mail):
     # Решение: пока не меняем диалог, просто возьмем заголовок из залоговка письма.
     title, sentences = prepare.prepare_text(text)
     if not title:
-        title = current_mail.metadata['Subject']
+        title = current_mail.metadata['Subject'] or "Новость"
 
     if "Fwd: " in title:
         title = title.split("Fwd: ")[1]

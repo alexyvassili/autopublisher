@@ -36,3 +36,10 @@
 ☑️ &mdash; Build project as poetry Python package  
 ☑️ &mdash; Build project as Docker package  
 ☑️ &mdash; Update secrets handling  
+
+
+---
+
+☑️ &mdash; Сделать дефолтный Title новости  
+☑️ &mdash; Сделать редактирование Title новости  
+☑️ &mdash; Определять, есть ли вообще Title в .docx документе  
