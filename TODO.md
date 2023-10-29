@@ -45,6 +45,7 @@
 
 ---
 
+☑️ &mdash; Fix empty mail body error
 ☑️ &mdash; Добавить PNG картинки  
 ☑️ &mdash; Сделать дефолтный Title новости  
 ☑️ &mdash; Сделать редактирование Title новости  

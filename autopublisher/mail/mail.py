@@ -61,7 +61,7 @@ def get_mail_metadata(message):
         mail_body = message.get_payload()[0].get_payload(decode=True)
     except AttributeError:
         mail_body = message.get_payload(decode=True)
-    mail_metadata['Body'] = mail_body.decode()
+    mail_metadata['Body'] = mail_body.decode() if mail_body else ""
     mail_metadata['Attachments'] = get_attachments_list(message)
     return mail_metadata
 
