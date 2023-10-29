@@ -1,6 +1,6 @@
 # apiai==1.2.3
 beautifulsoup4~=4.12
-EasyProcess==1.1
+EasyProcess~=1.1
 Fabric3==1.14.post1
 html2text==2020.1.16
 mammoth~=1.6
