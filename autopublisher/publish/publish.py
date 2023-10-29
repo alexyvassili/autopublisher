@@ -9,7 +9,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
-from autopublisher.bot.imagebot import Image
 from autopublisher.secrets import *
 from autopublisher.settings import *
 
@@ -135,7 +134,7 @@ def news(title, html, jpegs):
     return url
 
 
-def mainpage(image: Image):
+def mainpage(image: "autopublisher.bot.imagebot.Image"):
     driver: WebDriver = login_to_site()
     wait = WebDriverWait(driver, 20)
     load_jpegs_to_site(driver, image.folder, [image.name])
