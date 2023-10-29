@@ -4,10 +4,12 @@ from time import sleep
 from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
+from autopublisher.bot.imagebot import Image
 from autopublisher.secrets import *
 from autopublisher.settings import *
 
@@ -51,30 +53,30 @@ def close_driver(driver):
 
 
 def login_to_site():
-    driver = get_driver()
+    driver: WebDriver = get_driver()
     driver.get(SITE_LOGIN_URL)
     assert "Лотошино" in driver.title
-    name_input = driver.find_element_by_id('edit-name')
+    name_input = driver.find_element(By.ID, 'edit-name')
     name_input.send_keys(SITE_USERNAME)
-    passwd_input = driver.find_element_by_id("edit-pass")
+    passwd_input = driver.find_element(By.ID, "edit-pass")
     passwd_input.send_keys(SITE_PASSWORD)
     passwd_input.send_keys(Keys.RETURN)
 
     wait = WebDriverWait(driver, 20)
-    element = wait.until(EC.title_contains(SITE_USERNAME))
+    _ = wait.until(EC.title_contains(SITE_USERNAME))
     return driver
 
 
-def load_jpegs_to_site(driver, folder, jpegs):
+def load_jpegs_to_site(driver: WebDriver, folder, jpegs):
     """You must be logged in before uploading!"""
     for filename in jpegs:
         driver.get(SITE_FILEBROWSER_URL)
-        driver.find_element_by_name("upload").click()
-        file_load_input = driver.find_element_by_id("edit-imce")
+        driver.find_element(By.NAME, "upload").click()
+        file_load_input = driver.find_element(By.ID, "edit-imce")
         file_load_input.send_keys(os.path.join(folder, filename))
-        driver.find_element_by_id("edit-upload").click()
+        driver.find_element(By.ID, "edit-upload").click()
         wait = WebDriverWait(driver, 20)
-        element = wait.until(EC.presence_of_element_located((By.ID, filename)))
+        _ = wait.until(EC.presence_of_element_located((By.ID, filename)))
     sleep(1)
 
 
@@ -86,12 +88,12 @@ def create_rasp_html(jpegs):
     return html
 
 
-def update_rasp(driver, html):
+def update_rasp(driver: WebDriver, html):
     driver.get(SITE_RASP_URL)
-    driver.find_element_by_id("wysiwyg-toggle-edit-body-und-0-value").click()
-    driver.find_element_by_id("edit-body-und-0-value").clear()
-    driver.find_element_by_id("edit-body-und-0-value").send_keys(html)
-    driver.find_element_by_id("edit-submit").click()
+    driver.find_element(By.ID, "wysiwyg-toggle-edit-body-und-0-value").click()
+    driver.find_element(By.ID, "edit-body-und-0-value").clear()
+    driver.find_element(By.ID, "edit-body-und-0-value").send_keys(html)
+    driver.find_element(By.ID, "edit-submit").click()
 
     wait = WebDriverWait(driver, 20)
     wait.until(title_not_contains("Редактирование"))
@@ -99,7 +101,7 @@ def update_rasp(driver, html):
 
 
 def rasp(mail_folder, jpegs):
-    driver = login_to_site()
+    driver: WebDriver = login_to_site()
     load_jpegs_to_site(driver, mail_folder, jpegs)
     html = create_rasp_html(jpegs)
     update_rasp(driver, html)
@@ -109,22 +111,22 @@ def rasp(mail_folder, jpegs):
 
 
 def news(title, html, jpegs):
-    driver = login_to_site()
+    driver: WebDriver = login_to_site()
     wait = WebDriverWait(driver, 20)
     driver.get(SITE_NEWS_URL)
-    driver.find_element_by_id("edit-title").send_keys(title)
-    driver.find_element_by_id("wysiwyg-toggle-edit-body-und-0-value").click()
-    driver.find_element_by_id("edit-body-und-0-value").send_keys(html)
+    driver.find_element(By.ID, "edit-title").send_keys(title)
+    driver.find_element(By.ID, "wysiwyg-toggle-edit-body-und-0-value").click()
+    driver.find_element(By.ID, "edit-body-und-0-value").send_keys(html)
 
     file_uploader_id = "edit-field-image-und-{}-upload"
     file_uploader_btn = "edit-field-image-und-{}-upload-button"
 
     for j, filename in enumerate(jpegs):
-        driver.find_element_by_id(file_uploader_id.format(j)).send_keys(filename)
-        driver.find_element_by_id(file_uploader_btn.format(j)).click()
+        driver.find_element(By.ID, file_uploader_id.format(j)).send_keys(filename)
+        driver.find_element(By.ID, file_uploader_btn.format(j)).click()
         wait.until(EC.presence_of_element_located((By.ID, file_uploader_id.format(j + 1))))
 
-    driver.find_element_by_id("edit-submit").click()
+    driver.find_element(By.ID, "edit-submit").click()
 
     wait.until(title_not_contains("Создание материала"))
     sleep(1)
@@ -133,12 +135,12 @@ def news(title, html, jpegs):
     return url
 
 
-def mainpage(image: 'imagebot.Image'):
-    driver = login_to_site()
+def mainpage(image: Image):
+    driver: WebDriver = login_to_site()
     wait = WebDriverWait(driver, 20)
     load_jpegs_to_site(driver, image.folder, [image.name])
     driver.get(SITE_MAINPAGE_EDIT)
-    text_area = driver.find_element_by_id("edit-body-und-0-value")
+    text_area = driver.find_element(By.ID, "edit-body-und-0-value")
     text = text_area.text
     jpeg_html = JPEG_TEMPLATE.format(
         start_date=image.start_date,
@@ -148,7 +150,7 @@ def mainpage(image: 'imagebot.Image'):
     html = jpeg_html + text
     text_area.clear()
     text_area.send_keys(html)
-    driver.find_element_by_id("edit-submit").click()
+    driver.find_element(By.ID, "edit-submit").click()
     wait.until(title_not_contains("Редактирование"))
     sleep(1)
     url = driver.current_url

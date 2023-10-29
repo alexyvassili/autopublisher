@@ -11,4 +11,4 @@ python-telegram-bot==12.8
 PyVirtualDisplay~=3.0
 razdel~=0.5
 requests~=2.31
-selenium~=3.141
+selenium~=4.14
