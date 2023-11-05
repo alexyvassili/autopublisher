@@ -3,12 +3,12 @@ CI_PROJECT_NAME ?= $(shell python3.11 setup.py --name)
 VERSION = $(shell python3.11 setup.py --version | tr '+' '-')
 PROJECT_PATH := $(shell echo $(CI_PROJECT_NAME) | tr '-' '_')
 
-CI_REGISTRY ?= registry.yandex.net
-CI_PROJECT_NAMESPACE ?= edadeal
-CI_PROJECT_NAME ?= $(shell echo $(PROJECT_PATH) | tr -cd "[:alnum:]")
-CI_BUILD_TOKEN ?= ''
-CI_REGISTRY_IMAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAMESPACE)/$(CI_PROJECT_NAME)
-CI_REGISTRY_IMAGE_STAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAMESPACE)/$(CI_PROJECT_NAME)/stage
+#CI_REGISTRY ?= registry.yandex.net
+#CI_PROJECT_NAMESPACE ?= autopublisher
+#CI_PROJECT_NAME ?= $(shell echo $(PROJECT_PATH) | tr -cd "[:alnum:]")
+#CI_BUILD_TOKEN ?= ''
+#CI_REGISTRY_IMAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAMESPACE)/$(CI_PROJECT_NAME)
+#CI_REGISTRY_IMAGE_STAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAMESPACE)/$(CI_PROJECT_NAME)/stage
 
 LINTER_IMAGE ?= registry.yandex.net/edadeal/gitlab/dockers/python-base:pylama
 
