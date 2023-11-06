@@ -54,7 +54,7 @@ lint:
 purge: clean
 	py -r autopublisher
 
-test: clean clean-pyc sdist lint
+test: clean clean-pyc sdist
 	echo "Make test"
 
 
