@@ -36,7 +36,8 @@ bump: clean $(PROJECT_PATH)/version.py
 sdist: bump
 	python3.11 setup.py sdist
 
-#build:
+build:
+	echo "Make build"
 #	docker build -t $(CI_PROJECT_NAME):$(VERSION) .
 
 clean:
@@ -45,19 +46,22 @@ clean:
 clean-pyc:
 	find . -iname '*.pyc' -delete
 
-#lint:
+lint:
+	echo "Make lint"
 #	docker run --workdir /app --rm -v $(shell pwd):/app:ro $(LINTER_IMAGE) \
 #		pylama
 #
-#purge: clean
-#	rm -fr env
-#
-#test: clean clean-pyc sdist lint
-#	echo Empty command
-#
-#upload:
-#	echo Empty command
+purge: clean
+	py -r autopublisher
+
+test: clean clean-pyc sdist lint
+	echo "Make test"
 
 
-develop: clean
+upload: sdist
+	echo "Make upload"
+
+
+develop: purge
+	py -n 3.11 autopublisher
 	~/.python3/venvs/autopublisher/bin/pip install -Ue '.[develop]'
