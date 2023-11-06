@@ -3,23 +3,24 @@
     on debian stretch on custom preinstalled pyenv python
 """
 import os
-import sys
 
 from fabric.state import env
-from fabric.api import cd, run, sudo, settings
+from fabric.api import run, sudo
 from fabric.contrib.files import exists, upload_template
 
-from secrets import DEPLOY_HOST, DEPLOY_USER
-from prepare import SOFFICE_PATH
+from autopublisher.secrets import DEPLOY_HOST, DEPLOY_USER
 
 
 env.hosts = [f'{DEPLOY_USER}@{DEPLOY_HOST}']
+
+# для Fabric SOFFICE_PATH всегда соответствует Linux
+SOFFICE_PATH = "/opt/libreoffice7.6/program/soffice"
 
 
 def bootstrap():
     set_env()
     run('uname -a')
-    prepare_interpreter()
+    check_interpreter()
     install_system_libs()
     install_libreoffice()
     create_folders()
@@ -28,6 +29,7 @@ def bootstrap():
     create_virtualenv()
     install_venv_libs()
     download_gecko_driver()
+    install()
     set_service()
     restart_all()
 
@@ -38,42 +40,42 @@ def deploy():
     get_src()
     set_secrets()
     install_venv_libs()
+    install()
     restart_all()
 
 
 def set_env():
     env.USER = DEPLOY_USER
     env.BASE_PATH = f'/home/{env.USER}/projects'
-    env.VENV_PATH = f'/home/{env.USER}/.pyenv/versions'
+    env.VENV_PATH = f'/home/{env.USER}/.python3/venvs'
     env.PROJECT_NAME = 'autopublisher'
     env.REMOTE_PROJECT_PATH = os.path.join(env.BASE_PATH, env.PROJECT_NAME)
-    env.REMOTE_VENV_PATH = os.path.join(env.VENV_PATH,
-                                        env.PROJECT_NAME)
+    env.SECRETS_REMOTE_PATH = os.path.join(env.BASE_PATH, env.PROJECT_NAME, env.PROJECT_NAME)
+    env.REMOTE_VENV_PATH = os.path.join(env.VENV_PATH, env.PROJECT_NAME)
     env.GIT_REPO_PATH = "https://github.com/alexyvassili/autopublisher.git"
-    env.PYTHON_VESRION = "3.6.8"
-    env.PYENV_PATH = f'/home/{env.USER}/.pyenv'
-    env.BASE_REMOTE_NTERPRETER = f'/home/{env.USER}/.pyenv/versions/{env.PYTHON_VESRION}/bin/python'
-    env.REMOTE_VENV_PATH = f'/home/{env.USER}/.pyenv/versions/{env.PROJECT_NAME}'
-    env.VENV_REMOTE_PYTHON_PATH = f'/home/{env.USER}/.pyenv/versions/{env.PROJECT_NAME}/bin/python'
+    env.PYTHON_VERSION = "3.11"
+    env.BASE_REMOTE_INTERPRETER = f'/usr/bin/python{env.PYTHON_VERSION}'
+    env.VENV_REMOTE_PYTHON_PATH = f'{env.REMOTE_VENV_PATH}/bin/python3'
 
 
-def prepare_interpreter():
-    if not exists(env.PYENV_PATH):
-        print('Pyenv not found, loading...')
-        run("curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash")
-
-    if not exists(env.BASE_REMOTE_NTERPRETER):
-        print(f'Interpreter not found, load Python {env.PYTHON_VESRION}')
-        run(f"{env.PYENV_PATH}/bin/pyenv install {env.PYTHON_VESRION}")
+def check_interpreter():
+    print(f'Check {env.BASE_REMOTE_INTERPRETER}', end='...')
+    if not exists(env.BASE_REMOTE_INTERPRETER):
+        print(f'error.\nInterpreter not found, load Python {env.PYTHON_VERSION}')
+        import sys
+        sys.exit(1)
+    print('OK')
 
 
 def install_system_libs():
-    sudo('aptitude install -y imagemagick git xvfb x11-utils firefox-esr default-jre libmagic1 unrar')
+    sudo('apt-get install aptitude')
+    sudo('aptitude update')
+    sudo('aptitude install -y imagemagick git xvfb x11-utils firefox-esr default-jre libmagic1 unrar libffi-dev')
 
 
 def install_libreoffice():
     if not exists(SOFFICE_PATH):
-        run('wget http://download.documentfoundation.org/libreoffice/stable/6.3.3/deb/x86_64/LibreOffice_6.3.3_Linux_x86-64_deb.tar.gz -O /tmp/libreoffice.tar.gz')
+        run('wget http://download.documentfoundation.org/libreoffice/stable/7.6.2/deb/x86_64/LibreOffice_7.6.2_Linux_x86-64_deb.tar.gz -O /tmp/libreoffice.tar.gz')
         run('mkdir /tmp/libreoffice_setup')
         # распаковываем все файлы без сохранения структуры директорий
         run('tar xvzf /tmp/libreoffice.tar.gz -C /tmp/libreoffice_setup/ --strip-components 2')
@@ -85,7 +87,7 @@ def install_libreoffice():
 
 def create_folders():
     _mkdir(env.REMOTE_PROJECT_PATH, use_sudo=True, chown=True)
-    # _mkdir(env.REMOTE_VENV_PATH, use_sudo=True, chown=True)
+    _mkdir(env.VENV_PATH, use_sudo=True, chown=True)
 
 
 def get_src():
@@ -100,14 +102,17 @@ def set_secrets():
     #     os.path.join(env.PROJECT_NAME, 'secrets.py'),
     #     os.path.join(env.REMOTE_PROJECT_PATH, env.PROJECT_NAME)
     # )
-    upload_template('secrets.py', env.REMOTE_PROJECT_PATH)
+    upload_template('autopublisher/secrets.py', env.SECRETS_REMOTE_PATH)
 
 
 def create_virtualenv():
     if not exists(env.VENV_REMOTE_PYTHON_PATH):
-        run(f"{env.PYENV_PATH}/bin/pyenv virtualenv {env.PYTHON_VESRION} {env.PROJECT_NAME}")
+        sudo('aptitude update')
+        sudo('aptitude install -y python3.11-venv python3-pip')
+        run(f"python3.11 -m venv {env.REMOTE_VENV_PATH}")
         pip = os.path.join(env.REMOTE_VENV_PATH, 'bin', 'pip3')
         run(f'{pip} install --upgrade pip')
+        run(f'{pip} install six wheel')
 
 
 def install_venv_libs():
@@ -117,13 +122,17 @@ def install_venv_libs():
 
 def download_gecko_driver():
     if not exists('/usr/bin/geckodriver'):
-        run('wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz -O /tmp/geckodriver.tar.gz')
+        run('wget https://github.com/mozilla/geckodriver/releases/download/v0.33.0/geckodriver-v0.33.0-linux64.tar.gz -O /tmp/geckodriver.tar.gz')
         run('mkdir -p /tmp/geckodriver')
         run('tar xvzf /tmp/geckodriver.tar.gz -C /tmp/geckodriver')
         sudo('cp /tmp/geckodriver/geckodriver /usr/bin')
         run('rm /tmp/geckodriver/*')
         run('rmdir /tmp/geckodriver')
         run('rm /tmp/geckodriver.tar.gz')
+
+
+def install():
+    run(f'cd {env.REMOTE_PROJECT_PATH} && make sdist && {env.VENV_REMOTE_PYTHON_PATH} -m pip install dist/{env.PROJECT_NAME}*')
 
 
 def set_service():

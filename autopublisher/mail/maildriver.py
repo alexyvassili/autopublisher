@@ -1,12 +1,13 @@
 import os
 import logging
 import shutil
-import mail
-import prepare
-from document_utils import docx2html, get_text_from_html, unzip_without_structure, unrar
-from spelling import spell_line
 
-from settings import TMP_FOLDER, TMP_FOLDER_PREFIX
+import autopublisher.mail.mail as mail
+import autopublisher.publish.prepare as prepare
+from autopublisher.utils.document import docx2html, get_text_from_html, unzip_without_structure, unrar
+from autopublisher.utils.spelling import spell_line
+
+from autopublisher.settings import TMP_FOLDER, TMP_FOLDER_PREFIX
 
 
 class CurrentMail:
@@ -133,7 +134,11 @@ def get_text_for_news(current_mail):
     # Решение: пока не меняем диалог, просто возьмем заголовок из залоговка письма.
     title, sentences = prepare.prepare_text(text)
     if not title:
-        title = current_mail.metadata['Subject'].split("Fwd: ")[1]
+        title = current_mail.metadata['Subject'] or "Новость"
+
+    if "Fwd: " in title:
+        title = title.split("Fwd: ")[1]
+
     title = spell_line(title)
     try:
         spelled_sentences = [spell_line(sent) for sent in sentences]

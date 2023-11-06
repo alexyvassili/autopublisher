@@ -1,14 +1,15 @@
 import logging
 
-import maildriver
-import prepare
-import publish
-from secrets import MAIL_FROM, ALTERNATE_MAIL
-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CommandHandler, MessageHandler, ConversationHandler, CallbackQueryHandler
 from telegram.ext import Filters
-from telegramlib import owner_only
+
+import autopublisher.mail.maildriver as maildriver
+import autopublisher.publish.prepare as prepare
+import autopublisher.publish.publish as publish
+from autopublisher.utils.telegram import owner_only
+
+from autopublisher.secrets import MAIL_FROM, ALTERNATE_MAIL
 
 
 # Stages

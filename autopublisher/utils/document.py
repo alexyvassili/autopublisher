@@ -11,6 +11,7 @@ from PIL import Image
 from io import BytesIO
 from subprocess import call, Popen, PIPE
 
+
 WORD_TMP_DIR = 'word_tmp'
 FORMATTED_FILE = 'tmp_new_rasp.docx'
 
