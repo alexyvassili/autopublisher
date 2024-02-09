@@ -134,7 +134,7 @@ def news(title, html, jpegs):
     return url
 
 
-def mainpage(image: "autopublisher.bot.imagebot.Image"):
+def mainpage(image: "autopublisher.handlers.imagebot.Image"):
     driver: WebDriver = login_to_site()
     wait = WebDriverWait(driver, 20)
     load_jpegs_to_site(driver, image.folder, [image.name])

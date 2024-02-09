@@ -5,11 +5,11 @@ Script for automatic publish news and updates from email to drupal site
 
 ### Required packages and applications
 
-1. Install LibreOffice: 
+1. Install LibreOffice:
 https://ru.libreoffice.org
 
 
-2. Download and unpack Gecko driver for Selenium: 
+2. Download and unpack Gecko driver for Selenium:
 https://github.com/mozilla/geckodriver/releases
 
 
@@ -20,7 +20,7 @@ https://github.com/mozilla/geckodriver/releases
 
 ---
 
-If you have `Pillow` installation error (from `requirements.txt`), you need 
+If you have `Pillow` installation error (from `requirements.txt`), you need
 to install `zlib` requirement for Pillow and add flags for compiler:
 
 `$ brew install zlib`
@@ -28,3 +28,11 @@ to install `zlib` requirement for Pillow and add flags for compiler:
 `$ export LDFLAGS="-L/opt/homebrew/opt/zlib/lib"`
 
 `$ export CPPFLAGS="-I/opt/homebrew/opt/zlib/include"`
+
+
+## How to develop
+
+- `make develop` - create virtualenv, install develop package,
+- `make pytest` - run pytest
+- `make lint` - run pylama with mypy
+- `poetry run service_template` - start service locally

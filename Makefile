@@ -1,67 +1,66 @@
-CI_PROJECT_NAME ?= $(shell python3.11 setup.py --name)
+CI_PROJECT_NAME ?= autopublisher
+PROJECT_PATH := autopublisher
 
-VERSION = $(shell python3.11 setup.py --version | tr '+' '-')
-PROJECT_PATH := $(shell echo $(CI_PROJECT_NAME) | tr '-' '_')
+VERSION = $(shell poetry version -s)
 
-#CI_REGISTRY ?= registry.yandex.net
-#CI_PROJECT_NAMESPACE ?= autopublisher
-#CI_PROJECT_NAME ?= $(shell echo $(PROJECT_PATH) | tr -cd "[:alnum:]")
-#CI_BUILD_TOKEN ?= ''
-#CI_REGISTRY_IMAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAMESPACE)/$(CI_PROJECT_NAME)
-#CI_REGISTRY_IMAGE_STAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAMESPACE)/$(CI_PROJECT_NAME)/stage
+CI_REGISTRY ?= registry.edadeal.yandex-team.ru
+CI_PROJECT_NAMESPACE ?= python
+CI_PROJECT_NAME ?= $(shell echo $(PROJECT_PATH) | tr -cd "[:alnum:]")
+CI_REGISTRY_IMAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAMESPACE)/$(CI_PROJECT_NAME)
+DOCKER_TAG = $(shell echo $(VERSION) | tr '+' '-')
 
-LINTER_IMAGE ?= registry.yandex.net/edadeal/gitlab/dockers/python-base:pylama
+
+YA_REGISTRY_HOST ?= registry.yandex.net
+YA_REGISTRY_IMAGE ?= $(YA_REGISTRY_HOST)/edadeal/gitlab/$(CI_PROJECT_NAMESPACE)/$(CI_PROJECT_NAME)
 
 all:
-	@echo "make build           - Build a docker images"
-	@echo "make lint            - Syntax check with pylama"
-	@echo "make test            - Test this project"
-	@echo "make upload          - Upload this project to the docker-registry"
-	@echo "make develop         - Configure the development environment"
-	@echo "make start           - Start service locally with docker compose"
-	@echo "make start-rebuild   - Rebuild all images and start service locally with docker compose"
-	@echo "make clean           - Remove files which creates by distutils"
-	@echo "make purge           - Complete cleanup the project"
-	@echo "make gray            - Reformat code with gray linter"
-	@echo "make version         - Print package name and version"
+	@echo "make build 		- Build a docker image"
+	@echo "make lint 		- Syntax check with pylama"
+	@echo "make pytest 		- Test this project"
+	@echo "make format 		- Format project with ruff and black"
+	@echo "make upload 		- Upload this project to the docker-registry"
+	@echo "make clean 		- Remove files which creates by distutils"
+	@echo "make purge 		- Complete cleanup the project"
 	@exit 0
 
+wheel:
+	poetry build -f wheel
+	poetry export -f requirements.txt -o dist/requirements.txt
 
-
-$(PROJECT_PATH)/version.py:
-	python3.11 bump.py $(PROJECT_PATH)/version.py
-
-bump: clean $(PROJECT_PATH)/version.py
-
-sdist: bump
-	python3.11 setup.py sdist
-
-build:
-	echo "Make build"
-#	docker build -t $(CI_PROJECT_NAME):$(VERSION) .
+build: clean wheel
+	docker build -t $(CI_REGISTRY_IMAGE):$(DOCKER_TAG) --target release .
 
 clean:
-	rm -fr *.egg-info dist $(PROJECT_PATH)/version.py
+	rm -fr dist
 
 clean-pyc:
 	find . -iname '*.pyc' -delete
 
 lint:
-	echo "Make lint"
-#	docker run --workdir /app --rm -v $(shell pwd):/app:ro $(LINTER_IMAGE) \
-#		pylama
-#
+	poetry run mypy $(PROJECT_PATH)
+	poetry run ruff $(PROJECT_PATH) tests
+
+format:
+	poetry run ruff $(PROJECT_PATH) tests --fix-only
+	poetry run black $(PROJECT_PATH) tests
+
 purge: clean
-	py -r autopublisher
+	rm -rf ./.venv
 
-test: clean clean-pyc sdist lint
-	echo "Make test"
+pytest:
+	poetry run pytest
 
+local:
+	docker-compose -f docker-compose.dev.yml up --force-recreate --renew-anon-volumes --build
 
-upload: sdist
-	echo "Make upload"
+pytest-ci:
+	poetry run pytest -v --cov $(PROJECT_PATH) --cov-report term-missing --disable-warnings --junitxml=report.xml
+	poetry run coverage xml
 
+upload: build
+	docker push $(CI_REGISTRY_IMAGE):$(DOCKER_TAG)
 
-develop: purge
-	py -n 3.11 autopublisher
-	~/.python3/venvs/autopublisher/bin/pip install -Ue '.[develop]'
+develop: clean
+	poetry -V
+	poetry install
+	poetry run pre-commit install

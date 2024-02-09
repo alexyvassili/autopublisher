@@ -148,7 +148,12 @@ def get_resized_image_size(width, height, wide_side):
 
 
 def resize_jpeg_on_wide_size(jpeg, new_jpeg, wide_side_size):
-    """Ресайз картинки с определенным размером по широкой стороне"""
+    """
+        Ресайз картинки с определенным размером по широкой стороне.
+        Пример bash-команды для аналогичной задачи:
+        `for jpeg in *.jpg; do convert $jpeg -resize 1024 -quality 100 \
+         $(echo ${jpeg%%.*}_1.jpg); done`
+    """
     width, height = get_image_size(jpeg)
     m_width, m_height = get_resized_image_size(width, height, wide_side=wide_side_size)
 
