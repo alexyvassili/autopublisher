@@ -1,15 +1,7 @@
 import logging
 
-from typing import Callable
-
-import logging
-import traceback
-
 from telegram.ext import Updater
-from telegram.ext import CommandHandler, MessageHandler
-from telegram.ext import Filters
 
-from autopublisher.utils.telegram import owner_only
 from autopublisher.handlers.mailbot import mail_handler
 from autopublisher.handlers.imagebot import image_handler
 from autopublisher.handlers.start import start_handler
