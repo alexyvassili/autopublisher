@@ -1,22 +1,35 @@
+ifneq ("$(wildcard .env)","")
+include .env
+export
+endif
+
 CI_PROJECT_NAME ?= autopublisher
 PROJECT_PATH := autopublisher
 
 VERSION = $(shell poetry version -s)
 
-CI_REGISTRY ?= registry.edadeal.yandex-team.ru
+ifndef CI_REGISTRY_ID
+$(error CI_REGISTRY_ID is not set)
+endif
+
+CI_REGISTRY_SERVER ?= cr.yandex
+CI_REGISTRY ?= $(CI_REGISTRY_SERVER)/$(CI_REGISTRY_ID)
+
+BASE = "base"
+
+AUTOPUBLISHER_BASE = $(CI_REGISTRY)/autopublisher:$(BASE)
+PYTHON_311 = $(CI_REGISTRY)/python:3.11
+
 CI_PROJECT_NAMESPACE ?= python
 CI_PROJECT_NAME ?= $(shell echo $(PROJECT_PATH) | tr -cd "[:alnum:]")
 CI_REGISTRY_IMAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAMESPACE)/$(CI_PROJECT_NAME)
 DOCKER_TAG = $(shell echo $(VERSION) | tr '+' '-')
 
 
-YA_REGISTRY_HOST ?= registry.yandex.net
-YA_REGISTRY_IMAGE ?= $(YA_REGISTRY_HOST)/edadeal/gitlab/$(CI_PROJECT_NAMESPACE)/$(CI_PROJECT_NAME)
-
 all:
 	@echo "make build 		- Build a docker image"
 	@echo "make lint 		- Syntax check with pylama"
-	@echo "make pytest 		- Test this project"
+	@echo "make test 		- Test this project"
 	@echo "make format 		- Format project with ruff and black"
 	@echo "make upload 		- Upload this project to the docker-registry"
 	@echo "make clean 		- Remove files which creates by distutils"
@@ -28,7 +41,10 @@ wheel:
 	poetry export -f requirements.txt -o dist/requirements.txt
 
 build: clean wheel
-	docker build -t $(CI_REGISTRY_IMAGE):$(DOCKER_TAG) --target release .
+	docker build -t $(CI_REGISTRY_IMAGE):$(DOCKER_TAG) \
+		--build-arg AUTOPUBLISHER_BASE=$(AUTOPUBLISHER_BASE) \
+		--build-arg PYTHON_311=$(PYTHON_311) \
+		--target release .
 
 clean:
 	rm -fr dist
@@ -51,6 +67,7 @@ pytest:
 	poetry run pytest
 
 local:
+	# TODO: обновить команду, чтоб работала
 	docker-compose -f docker-compose.dev.yml up --force-recreate --renew-anon-volumes --build
 
 pytest-ci:
