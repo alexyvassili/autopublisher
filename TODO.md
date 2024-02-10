@@ -55,3 +55,5 @@
 (Сейчас ошибка при нажатии кнопки Yes
 (`FileNotFoundError: [Errno 2] No such file or directory: 'convert'`)
 в новости не обрабатывается)
+☑️ &mdash; Для /mymail будет найдено и предложено к обработке любое письмо с моего адреса.
+Нужно добавить что-то типа if "LOTOSHINO" in Subject
