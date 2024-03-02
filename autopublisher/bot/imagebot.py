@@ -10,24 +10,31 @@ from telegram import ChatAction
 from telegram.ext import CommandHandler, MessageHandler, ConversationHandler
 from telegram.ext import Filters
 
+from autopublisher.config import config
 from autopublisher.utils.telegram import owner_only
 from autopublisher.bot.mailbot import TEXT, echo
 from autopublisher.utils.file import format_jpeg_name
 from autopublisher.utils.dateparse import add_date
 from autopublisher.publish.publish import mainpage
-from autopublisher.settings import TMP_FOLDER, TMP_FOLDER_PREFIX
+
+
+log = logging.getLogger(__name__)
 
 
 try:
     import magic
 except ImportError:
-    print("Error while importing python-magic")
-    print("Libmagic C library installation is needed")
-    print("Debian/Ubuntu:")
-    print(">>> apt-get install libmagic1")
-    print()
-    print("OSX:")
-    print(">>> brew install libmagic")
+    message = '\n'.join([
+        "Error while importing python-magic",
+        "Libmagic C library installation is needed",
+        "Debian/Ubuntu:",
+        ">>> apt-get install libmagic1",
+        "\n",
+        "OSX:",
+        ">>> brew install libmagic",
+    ])
+    log.error(message)
+    # raise ImportError(message)
 
 
 class Image:
@@ -55,8 +62,8 @@ class Image:
         iso_fmt_time = datetime.now().isoformat()
         self.name = format_jpeg_name(f'mainpage_image_{iso_fmt_time}.jpg')
         self.folder = os.path.join(
-            TMP_FOLDER,
-            TMP_FOLDER_PREFIX + get_salt()
+            config.tmp_folder,
+            config.tmp_folder_prefix + get_salt()
         )
         if os.path.exists(self.folder):
             shutil.rmtree(self.folder)

@@ -1,20 +1,17 @@
 import logging
 import os
-import platform
 import subprocess
 import shutil
 from bs4 import BeautifulSoup
 from datetime import datetime
 from razdel import sentenize
 
+from autopublisher.config import IMAGEMAGICK_PATH, SOFFICE_PATH, config
 from autopublisher.utils.document import format_rasp_docx, cd, resize_jpeg_on_wide_size, docx2html, get_lines_from_html
 from autopublisher.utils.file import format_jpeg_name, get_file_size_mb, get_files_for_extension, get_fullpath_files_for_extension
 
 
-if platform.system().lower() == "darwin":
-    SOFFICE_PATH = "/Applications/LibreOffice.app/Contents/MacOS/soffice"
-else:
-    SOFFICE_PATH = "/opt/libreoffice7.6/program/soffice"
+log = logging.getLogger(__name__)
 
 
 IMG_FOR_NEWS_FOLDER = 'img'
@@ -28,21 +25,22 @@ class PrepareError(Exception):
 
 
 def check_rasp_folder(folder):
-    docxs = [item for item in os.listdir(folder) if  item.endswith('docx')]
+    docxs = [item for item in os.listdir(folder) if item.endswith('docx')]
     if not docxs:
         raise PrepareError("Can't find word file in mail")
     elif len(docxs) > 1:
         raise PrepareError('Too many word files in mail')
 
-    jpegs = get_files_for_extension(folder, 'jpg')
+    images = get_files_for_extension(folder, 'jpg')
+    images += get_files_for_extension(folder, 'png')
 
-    if jpegs:
-        raise PrepareError('Jpeg in rasp mail found!')
+    if images:
+        raise PrepareError('Jpeg or png in rasp mail found!')
 
 
 def rasp(mail_folder):
     RASP_NAME = 'rasp_' + datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
-    JPG_NAME = os.path.join(mail_folder, RASP_NAME + '.jpg')
+    IMAGE_NAME = os.path.join(mail_folder, RASP_NAME + '.' + config.rasp_image_format)
 
     # rasp folder must contain only one .docx and no jpegs
     check_rasp_folder(mail_folder)
@@ -55,18 +53,42 @@ def rasp(mail_folder):
         raise PrepareError(f"Can't find formatted docx: {formatted_docx_name}")
 
     with cd(mail_folder):
-        subprocess.call([SOFFICE_PATH, '--headless', '--convert-to', 'pdf', formatted_docx_name])
+        soffice_command = [
+            SOFFICE_PATH,
+            '--headless',
+            '--convert-to', 'pdf',
+            formatted_docx_name,
+        ]
+        log.info('RUN: %s', ' '.join(soffice_command))
+        subprocess.call(soffice_command)
         PDF_NAME = formatted_docx_name.split('.')[0] + '.pdf'
         if not os.path.exists(PDF_NAME):
             raise PrepareError(f"Can't find formatted pdf: {formatted_docx_name}")
-        subprocess.call(['convert', '-density', '300', PDF_NAME, '-quality', '100', JPG_NAME])
-    jpegs = get_files_for_extension(mail_folder, 'jpg')
-    jpegs.sort()
 
-    if not jpegs:
-        raise PrepareError('Can\'t find rasp jpegs')
+        # previous version of this command:
+        # ['convert', '-density', '300', PDF_NAME, '-quality', '100', JPG_NAME]
+        imagemagick_command = [
+            IMAGEMAGICK_PATH,
+            '-verbose',
+            '-density', '150',
+            # add '-trim', to remove page fields
+            PDF_NAME,
+            '-quality', '100',
+            '-alpha', 'remove',
+            # add '-sharpen', '0x1.0', to more image sharpness
+            '-colorspace', 'sRGB',
+            IMAGE_NAME,
+        ]
+        log.info('RUN: %s', ' '.join(imagemagick_command))
+        subprocess.call(imagemagick_command)
+    rasp_images = get_files_for_extension(mail_folder, config.rasp_image_format)
+    rasp_images.sort()
+    log.info("Rasp images: %s", ', '.join(rasp_images))
 
-    return jpegs
+    if not rasp_images:
+        raise PrepareError('Can\'t find rasp images')
+
+    return rasp_images
 
 
 def prepare_jpegs_for_news(jpegs, folder, jpegs_folder):

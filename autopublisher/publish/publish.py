@@ -1,16 +1,19 @@
+import logging
 import os
 from time import sleep
 
 from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.firefox.webdriver import WebDriver
+from selenium.webdriver.firefox.webdriver import WebDriver, Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
-from autopublisher.secrets import *
-from autopublisher.settings import *
+from autopublisher.config import FIREFOX_BINARY_PATH, config
+
+
+log = logging.getLogger(__name__)
 
 
 display = None
@@ -37,44 +40,46 @@ class title_not_contains(object):
 
 
 def get_driver():
-    if SERVER_MODE:
+    if config.server_mode:
         global display
         display = Display(visible=False, size=(1366, 768))
         display.start()
-    driver = webdriver.Firefox()
+    options = Options()
+    options.binary_location = FIREFOX_BINARY_PATH
+    driver = webdriver.Firefox(options=options)
     return driver
 
 
 def close_driver(driver):
     driver.quit()
-    if SERVER_MODE:
+    if config.server_mode:
         display.stop()
 
 
 def login_to_site():
     driver: WebDriver = get_driver()
-    driver.get(SITE_LOGIN_URL)
+    driver.get(config.site_login_url)
     assert "Лотошино" in driver.title
     name_input = driver.find_element(By.ID, 'edit-name')
-    name_input.send_keys(SITE_USERNAME)
+    name_input.send_keys(config.site_username)
     passwd_input = driver.find_element(By.ID, "edit-pass")
-    passwd_input.send_keys(SITE_PASSWORD)
+    passwd_input.send_keys(config.site_passwd)
     passwd_input.send_keys(Keys.RETURN)
 
-    wait = WebDriverWait(driver, 20)
-    _ = wait.until(EC.title_contains(SITE_USERNAME))
+    wait = WebDriverWait(driver, config.web_driver_wait)
+    _ = wait.until(EC.title_contains(config.site_username))
     return driver
 
 
 def load_jpegs_to_site(driver: WebDriver, folder, jpegs):
     """You must be logged in before uploading!"""
     for filename in jpegs:
-        driver.get(SITE_FILEBROWSER_URL)
+        driver.get(config.site_filebrowser_url)
         driver.find_element(By.NAME, "upload").click()
         file_load_input = driver.find_element(By.ID, "edit-imce")
         file_load_input.send_keys(os.path.join(folder, filename))
         driver.find_element(By.ID, "edit-upload").click()
-        wait = WebDriverWait(driver, 20)
+        wait = WebDriverWait(driver, config.web_driver_wait)
         _ = wait.until(EC.presence_of_element_located((By.ID, filename)))
     sleep(1)
 
@@ -88,13 +93,13 @@ def create_rasp_html(jpegs):
 
 
 def update_rasp(driver: WebDriver, html):
-    driver.get(SITE_RASP_URL)
+    driver.get(config.site_rasp_url)
     driver.find_element(By.ID, "wysiwyg-toggle-edit-body-und-0-value").click()
     driver.find_element(By.ID, "edit-body-und-0-value").clear()
     driver.find_element(By.ID, "edit-body-und-0-value").send_keys(html)
     driver.find_element(By.ID, "edit-submit").click()
 
-    wait = WebDriverWait(driver, 20)
+    wait = WebDriverWait(driver, config.web_driver_wait)
     wait.until(title_not_contains("Редактирование"))
     sleep(1)
 
@@ -111,8 +116,8 @@ def rasp(mail_folder, jpegs):
 
 def news(title, html, jpegs):
     driver: WebDriver = login_to_site()
-    wait = WebDriverWait(driver, 20)
-    driver.get(SITE_NEWS_URL)
+    wait = WebDriverWait(driver, config.web_driver_wait)
+    driver.get(config.site_news_url)
     driver.find_element(By.ID, "edit-title").send_keys(title)
     driver.find_element(By.ID, "wysiwyg-toggle-edit-body-und-0-value").click()
     driver.find_element(By.ID, "edit-body-und-0-value").send_keys(html)
@@ -136,9 +141,9 @@ def news(title, html, jpegs):
 
 def mainpage(image: "autopublisher.bot.imagebot.Image"):
     driver: WebDriver = login_to_site()
-    wait = WebDriverWait(driver, 20)
+    wait = WebDriverWait(driver, config.web_driver_wait)
     load_jpegs_to_site(driver, image.folder, [image.name])
-    driver.get(SITE_MAINPAGE_EDIT)
+    driver.get(config.site_mainpage_edit_url)
     text_area = driver.find_element(By.ID, "edit-body-und-0-value")
     text = text_area.text
     jpeg_html = JPEG_TEMPLATE.format(

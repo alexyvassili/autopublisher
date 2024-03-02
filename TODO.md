@@ -43,6 +43,7 @@
 (or authomatic search displays) - configargparse  
 ☑️ &mdash; Update secrets handling  
 ☑️ &mdash; Add logging (on server file maybe)  
+☑️ &mdash; Сделать MailClient
 
 ---
 
