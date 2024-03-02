@@ -10,6 +10,7 @@ from autopublisher.arguments import parser
 from autopublisher.services.telegrambot import TelegramBot
 from autopublisher.config import config
 
+
 log = logging.getLogger(__name__)
 
 
