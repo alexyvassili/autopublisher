@@ -12,7 +12,7 @@ from telegram.ext import Filters
 
 from autopublisher.config import config
 from autopublisher.utils.telegram import owner_only
-from autopublisher.bot.mailbot import TEXT, echo
+from autopublisher.handlers.mailbot import TEXT, echo
 from autopublisher.utils.file import format_jpeg_name
 from autopublisher.utils.dateparse import add_date
 from autopublisher.publish.publish import mainpage
@@ -34,7 +34,7 @@ except ImportError:
         ">>> brew install libmagic",
     ])
     log.error(message)
-    # raise ImportError(message)
+    raise ImportError(message)
 
 
 class Image:

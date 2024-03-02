@@ -1,8 +1,7 @@
 import logging
 import traceback
 
-
-TELEGRAM_API_MESSAGE_LIMIT = 4096
+from autopublisher.config import TELEGRAM_API_MESSAGE_LIMIT
 
 
 def error_handler(update, context):
