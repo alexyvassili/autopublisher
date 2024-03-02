@@ -9,6 +9,9 @@ from autopublisher.utils.document import docx2html, get_text_from_html, unzip_wi
 from autopublisher.utils.spelling import spell_line
 
 
+log = logging.getLogger(__name__)
+
+
 class CurrentMail:
     def __init__(self):
         self.mail_id = None
@@ -68,8 +71,10 @@ def load_one_mail_rollback(mail_id, mail_folder):
 
 def load_most_old_mail_from(mail_from):
     mail_id, mail_folder, mail_metadata = None, None, None
+    log.info("Connecting to mail server...")
     connection = mail.get_connection()
     try:
+        log.info("Success, load new mails...")
         new_mails_ids = mail.get_new_mails_from(connection, mail_from)
         if new_mails_ids:
             mail_id = new_mails_ids[0]
