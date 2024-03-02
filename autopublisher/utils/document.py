@@ -11,6 +11,8 @@ from PIL import Image
 from io import BytesIO
 from subprocess import call, Popen, PIPE
 
+from autopublisher.config import IMAGEMAGICK_PATH
+
 
 WORD_TMP_DIR = 'word_tmp'
 FORMATTED_FILE = 'tmp_new_rasp.docx'
@@ -152,7 +154,7 @@ def resize_jpeg_on_wide_size(jpeg, new_jpeg, wide_side_size):
     width, height = get_image_size(jpeg)
     m_width, m_height = get_resized_image_size(width, height, wide_side=wide_side_size)
 
-    call(["convert", jpeg, "-resize", str(m_width), "-quality", "100", new_jpeg])
+    call([IMAGEMAGICK_PATH, jpeg, "-resize", str(m_width), "-quality", "100", new_jpeg])
 
 
 def docx2html(docx):

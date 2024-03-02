@@ -6,12 +6,15 @@ from email.header import decode_header
 import mimetypes
 import shutil
 
-from autopublisher.secrets import MAIL_SERVER, MAIL_LOGIN, MAIL_PASSWORD
+from autopublisher.config import config
+
+
+# TODO: сделать MailClient
 
 
 def get_connection():
-    imap = imaplib.IMAP4_SSL(MAIL_SERVER)
-    status, response = imap.login(MAIL_LOGIN, MAIL_PASSWORD)
+    imap = imaplib.IMAP4_SSL(config.mail_server)
+    status, response = imap.login(config.mail_login, config.mail_passwd)
     if status != 'OK':
         raise ConnectionError(f"Error logged in email box. Status: {status}")
     imap.select('INBOX')

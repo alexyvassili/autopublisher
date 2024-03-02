@@ -2,12 +2,14 @@ import os
 import logging
 import shutil
 
+from autopublisher.config import config
 import autopublisher.mail.mail as mail
 import autopublisher.publish.prepare as prepare
 from autopublisher.utils.document import docx2html, get_text_from_html, unzip_without_structure, unrar
 from autopublisher.utils.spelling import spell_line
 
-from autopublisher.settings import TMP_FOLDER, TMP_FOLDER_PREFIX
+
+log = logging.getLogger(__name__)
 
 
 class CurrentMail:
@@ -69,12 +71,17 @@ def load_one_mail_rollback(mail_id, mail_folder):
 
 def load_most_old_mail_from(mail_from):
     mail_id, mail_folder, mail_metadata = None, None, None
+    log.info("Connecting to mail server...")
     connection = mail.get_connection()
     try:
+        log.info("Success, load new mails...")
         new_mails_ids = mail.get_new_mails_from(connection, mail_from)
         if new_mails_ids:
             mail_id = new_mails_ids[0]
-            mail_folder = os.path.join(TMP_FOLDER, TMP_FOLDER_PREFIX + mail_id.decode())
+            mail_folder = os.path.join(
+                config.tmp_folder,
+                config.tmp_folder_prefix + mail_id.decode(),
+            )
             message = mail.get_message(connection, mail_id)
             mail_metadata = mail.get_mail_metadata(message)
             mail.save_email(message, mail_folder)

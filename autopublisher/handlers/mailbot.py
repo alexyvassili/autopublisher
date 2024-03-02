@@ -4,12 +4,11 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CommandHandler, MessageHandler, ConversationHandler, CallbackQueryHandler
 from telegram.ext import Filters
 
+from autopublisher.config import config
 import autopublisher.mail.maildriver as maildriver
 import autopublisher.publish.prepare as prepare
 import autopublisher.publish.publish as publish
 from autopublisher.utils.telegram import owner_only
-
-from autopublisher.secrets import MAIL_FROM, ALTERNATE_MAIL
 
 
 # Stages
@@ -45,16 +44,16 @@ def check_mail(update, context, mail_from, name_for_msg):
 
 @owner_only
 def from_koshelev_check_mail(update, context):
-    return check_mail(update, context, MAIL_FROM, 'Кошелева')
+    return check_mail(update, context, config.mail_from, 'Кошелева')
 
 
 @owner_only
 def from_me_check_mail(update, context):
     """
-    Warning! Будет найдено и предложено к обработке любое письмо с моего адреса
-    Хотя я планирую добавить что-то типа if "LOTOHA" in Subject
+    TODO: Warning! Будет найдено и предложено к обработке любое письмо с моего адреса
+     Хотя я планирую добавить что-то типа if "LOTOSHINO" in Subject
     """
-    return check_mail(update, context, ALTERNATE_MAIL, 'меня')
+    return check_mail(update, context, config.alternate_mail, 'меня')
 
 
 def news(update, context):
@@ -110,9 +109,9 @@ def edit_save(update, context):
 
 def rasp(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text='Подготовка...')
-    jpegs = prepare.rasp(current_mail.folder)
+    rasp_images = prepare.rasp(current_mail.folder)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Публикуем расписание')
-    url = publish.rasp(current_mail.folder, jpegs)
+    url = publish.rasp(current_mail.folder, rasp_images)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Опубликовано!')
     context.bot.send_message(chat_id=update.effective_chat.id, text=url)
     current_mail.clear()
