@@ -20,7 +20,7 @@ https://github.com/mozilla/geckodriver/releases
 
 ---
 
-If you have `Pillow` installation error (from `requirements.txt`), you need 
+If you have `Pillow` installation error (from [pyproject.toml](pyproject.toml)), you need 
 to install `zlib` requirement for Pillow and add flags for compiler:
 
 `$ brew install zlib`
