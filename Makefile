@@ -36,6 +36,7 @@ all:
 	@echo "make upload 		- Upload this project to the docker-registry"
 	@echo "make clean 		- Remove files which creates by distutils"
 	@echo "make purge 		- Complete cleanup the project"
+	@echo "make start 		- Run application"
 	@exit 0
 
 
