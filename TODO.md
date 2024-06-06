@@ -44,6 +44,8 @@
 ☑️ &mdash; Update secrets handling  
 ☑️ &mdash; Add logging (on server file maybe)  
 ☑️ &mdash; Сделать MailClient
+☑️ &mdash; Сделать, чтобы из докера можно было запускать браузер в графическом режиме
+☑️ &mdash; На данный момент запуск в Docker не работает, нужно переписать не на Docker
 
 ---
 

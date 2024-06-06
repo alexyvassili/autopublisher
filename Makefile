@@ -1,67 +1,86 @@
-CI_PROJECT_NAME ?= $(shell python3.11 setup.py --name)
+# import variables from .env if CI_REGISTRY_ID is not defined
+ifndef CI_REGISTRY_ID
+ifneq (,$(wildcard .env))  # if exists file
+include .env
+endif
+endif
 
-VERSION = $(shell python3.11 setup.py --version | tr '+' '-')
-PROJECT_PATH := $(shell echo $(CI_PROJECT_NAME) | tr '-' '_')
+ifndef CI_REGISTRY_ID
+$(error CI_REGISTRY_ID is not set)
+endif
 
-#CI_REGISTRY ?= registry.yandex.net
-#CI_PROJECT_NAMESPACE ?= autopublisher
-#CI_PROJECT_NAME ?= $(shell echo $(PROJECT_PATH) | tr -cd "[:alnum:]")
-#CI_BUILD_TOKEN ?= ''
-#CI_REGISTRY_IMAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAMESPACE)/$(CI_PROJECT_NAME)
-#CI_REGISTRY_IMAGE_STAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAMESPACE)/$(CI_PROJECT_NAME)/stage
+CI_PROJECT_NAME ?= autopublisher
+PROJECT_PATH := autopublisher
 
-LINTER_IMAGE ?= registry.yandex.net/edadeal/gitlab/dockers/python-base:pylama
+VERSION = $(shell poetry version -s)
+
+PYTHON_VERSION = 3.11
+BASE_TAG = base
+
+CI_REGISTRY_SERVER = cr.yandex
+CI_REGISTRY ?= $(CI_REGISTRY_SERVER)/$(CI_REGISTRY_ID)
+
+AUTOPUBLISHER_BASE_IMAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAME):$(BASE_TAG)
+PYTHON_311_IMAGE ?= $(CI_REGISTRY)/python:$(PYTHON_VERSION)
+
+CI_PROJECT_NAME ?= $(shell echo $(PROJECT_PATH) | tr -cd "[:alnum:]")
+CI_REGISTRY_IMAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAME)
+DOCKER_TAG = $(shell echo $(VERSION) | tr '+' '-')
+
 
 all:
-	@echo "make build           - Build a docker images"
-	@echo "make lint            - Syntax check with pylama"
-	@echo "make test            - Test this project"
-	@echo "make upload          - Upload this project to the docker-registry"
-	@echo "make develop         - Configure the development environment"
-	@echo "make start           - Start service locally with docker compose"
-	@echo "make start-rebuild   - Rebuild all images and start service locally with docker compose"
-	@echo "make clean           - Remove files which creates by distutils"
-	@echo "make purge           - Complete cleanup the project"
-	@echo "make gray            - Reformat code with gray linter"
-	@echo "make version         - Print package name and version"
+	@echo "make build 		- Build a docker image"
+	@echo "make lint 		- Syntax check with pylama"
+	@echo "make test 		- Test this project"
+	@echo "make format 		- Format project with ruff and black"
+	@echo "make upload 		- Upload this project to the docker-registry"
+	@echo "make clean 		- Remove files which creates by distutils"
+	@echo "make purge 		- Complete cleanup the project"
+	@echo "make start 		- Run application"
 	@exit 0
 
 
+wheel:
+	poetry build -f wheel
+	poetry export -f requirements.txt -o dist/requirements.txt
 
-$(PROJECT_PATH)/version.py:
-	python3.11 bump.py $(PROJECT_PATH)/version.py
-
-bump: clean $(PROJECT_PATH)/version.py
-
-sdist: bump
-	python3.11 setup.py sdist
-
-build:
-	echo "Make build"
-#	docker build -t $(CI_PROJECT_NAME):$(VERSION) .
+build: clean wheel
+	docker build \
+			--build-arg="AUTOPUBLISHER_BASE=$(AUTOPUBLISHER_BASE_IMAGE)" \
+			--build-arg="PYTHON_311=$(PYTHON_311_IMAGE)" \
+			-t $(CI_REGISTRY_IMAGE):$(DOCKER_TAG) \
+			--target release .
 
 clean:
-	rm -fr *.egg-info dist $(PROJECT_PATH)/version.py
+	rm -fr dist
 
 clean-pyc:
 	find . -iname '*.pyc' -delete
 
 lint:
-	echo "Make lint"
-#	docker run --workdir /app --rm -v $(shell pwd):/app:ro $(LINTER_IMAGE) \
-#		pylama
-#
-purge: clean
+	poetry run ruff $(PROJECT_PATH) tests
+	poetry run mypy $(PROJECT_PATH)
+
+format:
+	poetry run ruff $(PROJECT_PATH) tests --fix-only
+	poetry run black $(PROJECT_PATH) tests
+
+purge: clean clean-pyc
 	py -r autopublisher
 
-test: clean clean-pyc sdist lint
-	echo "Make test"
+test:
+	poetry run pytest
 
+start: build
+	DOCKER_IMAGE=$(CI_REGISTRY_IMAGE):$(DOCKER_TAG) \
+	docker-compose -f docker-compose.dev.yml up --force-recreate --renew-anon-volumes --build
 
-upload: sdist
-	echo "Make upload"
+upload: build
+	docker push $(CI_REGISTRY_IMAGE):$(DOCKER_TAG)
 
-
-develop: purge
+develop: clean
 	py -n 3.11 autopublisher
-	~/.python3/venvs/autopublisher/bin/pip install -Ue '.[develop]'
+	poetry env use $(shell py -p autopublisher)/bin/python3.11
+	poetry --version
+	poetry env info
+	poetry install

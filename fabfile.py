@@ -8,9 +8,10 @@ from fabric.state import env
 from fabric.api import run, sudo
 from fabric.contrib.files import exists, upload_template
 
-from autopublisher.secrets import DEPLOY_HOST, DEPLOY_USER
 
-
+DEPLOY_HOST = os.environ.get("DEPLOY_HOST")
+DEPLOY_USER = os.environ.get("DEPLOY_USER")
+assert DEPLOY_HOST and DEPLOY_USER
 env.hosts = [f'{DEPLOY_USER}@{DEPLOY_HOST}']
 
 # для Fabric SOFFICE_PATH всегда соответствует Linux
