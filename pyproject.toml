@@ -35,7 +35,7 @@ python-magic = "~0.4.27"
 python-telegram-bot = "12.8"
 PyVirtualDisplay = "3.0"
 razdel = "~0.5"
-requests = "~2.31"
+requests = "~2.32"
 # Selenium version fixed because of gecodriver error running in docker package
 # See for example https://github.com/appium/python-client/issues/863
 selenium = "==4.9.0"
