@@ -75,8 +75,7 @@ start: build
 	docker-compose -f docker-compose.dev.yml up --force-recreate --renew-anon-volumes --build
 
 upload: build
-	echo "Make upload"
-	#docker push $(CI_REGISTRY_IMAGE):$(DOCKER_TAG)
+	docker push $(CI_REGISTRY_IMAGE):$(DOCKER_TAG)
 
 develop: clean
 	py -n 3.11 autopublisher

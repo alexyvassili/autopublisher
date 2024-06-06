@@ -44,6 +44,7 @@
 ☑️ &mdash; Update secrets handling  
 ☑️ &mdash; Add logging (on server file maybe)  
 ☑️ &mdash; Сделать MailClient
+☑️ &mdash; Сделать, чтобы из докера можно было запускать браузер в графическом режиме
 
 ---
 
