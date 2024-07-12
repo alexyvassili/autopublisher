@@ -1,0 +1,6 @@
+autopublisher/
+LICENSE
+poetry.lock
+poetry.toml
+pyproject.toml
+README.md

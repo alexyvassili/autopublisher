@@ -1,0 +1,27 @@
+## if you wish to make changes you can:
+## a.) add 'apt_preserve_sources_list: true' to /etc/cloud/cloud.cfg
+##     or do the same in user-data
+## b.) add sources in /etc/apt/sources.list.d
+## c.) make changes to template file /etc/cloud/templates/sources.list.debian.tmpl
+###
+
+# See http://www.debian.org/releases/stable/i386/release-notes/ch-upgrading.html
+# for how to upgrade to newer versions of the distribution.
+deb http://mirror.yandex.ru/debian/ testing main contrib non-free non-free-firmware
+deb-src http://mirror.yandex.ru/debian/ testing main contrib non-free non-free-firmware
+
+## Major bug fix updates produced after the final release of the
+## distribution.
+deb http://security.debian.org/ testing-security main contrib non-free non-free-firmware
+deb-src http://security.debian.org/ testing-security main contrib non-free non-free-firmware
+deb http://mirror.yandex.ru/debian/ testing-updates main contrib non-free non-free-firmware
+deb-src http://mirror.yandex.ru/debian/ testing-updates main contrib non-free non-free-firmware
+
+## Uncomment the following two lines to add software from the 'backports'
+## repository.
+##
+## N.B. software from this repository may not have been tested as
+## extensively as that contained in the main release, although it includes
+## newer versions of some applications which may provide useful features.
+deb http://mirror.yandex.ru/debian/ testing-backports main contrib non-free non-free-firmware
+deb-src http://mirror.yandex.ru/debian/ testing-backports main contrib non-free non-free-firmware

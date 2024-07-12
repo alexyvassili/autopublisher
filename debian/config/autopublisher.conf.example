@@ -1,0 +1,17 @@
+server-mode: true
+
+# mail secrets
+mail-server: imap.mail.com
+mail-login: user@mail.com
+mail-passwd: mail-passwd
+mail-from: mail@mail.com
+mail-alternate: mail-alternate@mail.com
+
+#site secrets
+site-url: http://www.site.ru
+site-username: user
+site-passwd: passwd
+
+# telegram bot secrets
+telegram-bot-owner-id: 8022
+telegram-bot-token: telegram-bot-token
