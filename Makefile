@@ -1,12 +1,6 @@
-# import variables from .env if CI_REGISTRY_ID is not defined
-ifndef CI_REGISTRY_ID
+# import variables from .env
 ifneq (,$(wildcard .env))  # if exists file
 include .env
-endif
-endif
-
-ifndef CI_REGISTRY_ID
-$(error CI_REGISTRY_ID is not set)
 endif
 
 CI_PROJECT_NAME ?= autopublisher
@@ -15,17 +9,11 @@ PROJECT_PATH := autopublisher
 VERSION = $(shell poetry version -s)
 
 PYTHON_VERSION = 3.11
-BASE_TAG = base
-
-CI_REGISTRY_SERVER = cr.yandex
-CI_REGISTRY ?= $(CI_REGISTRY_SERVER)/$(CI_REGISTRY_ID)
-
-AUTOPUBLISHER_BASE_IMAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAME):$(BASE_TAG)
-PYTHON_311_IMAGE ?= $(CI_REGISTRY)/python:$(PYTHON_VERSION)
 
 CI_PROJECT_NAME ?= $(shell echo $(PROJECT_PATH) | tr -cd "[:alnum:]")
-CI_REGISTRY_IMAGE ?= $(CI_REGISTRY)/$(CI_PROJECT_NAME)
-DOCKER_TAG = $(shell echo $(VERSION) | tr '+' '-')
+
+VERSION_TAG = $(shell echo $(VERSION) | tr '+' '-')
+INSTALL_PATH = /usr/local/share/$(CI_PROJECT_NAME)
 
 
 all:
@@ -44,14 +32,10 @@ wheel:
 	poetry build -f wheel
 	poetry export -f requirements.txt -o dist/requirements.txt
 
-build: clean wheel
-	docker build \
-			--build-arg="AUTOPUBLISHER_BASE=$(AUTOPUBLISHER_BASE_IMAGE)" \
-			--build-arg="PYTHON_311=$(PYTHON_311_IMAGE)" \
-			-t $(CI_REGISTRY_IMAGE):$(DOCKER_TAG) \
-			--target release .
+clean-build:
+	rm -fr build
 
-clean:
+clean: clean-build
 	rm -fr dist
 
 clean-pyc:
@@ -71,16 +55,65 @@ purge: clean clean-pyc
 test:
 	poetry run pytest
 
-start: build
-	DOCKER_IMAGE=$(CI_REGISTRY_IMAGE):$(DOCKER_TAG) \
-	docker-compose -f docker-compose.dev.yml up --force-recreate --renew-anon-volumes --build
-
-upload: build
-	docker push $(CI_REGISTRY_IMAGE):$(DOCKER_TAG)
-
 develop: clean
 	py -n 3.11 autopublisher
 	poetry env use $(shell py -p autopublisher)/bin/python3.11
 	poetry --version
 	poetry env info
 	poetry install
+
+
+bootstrap-debian:
+	cp debian/tools/* /usr/local/bin/
+	sudo cp debian/config/sources.list /etc/apt/sources.list
+	sudo apt-get update && sudo apt-get install -y aptitude
+	sudo aptitude update && sudo aptitude upgrade -y
+	sudo apt-install apt-transport-https openssl ca-certificates locales tzdata
+	mkdir -p /usr/local/share/ca-certificates
+	sudo update-ca-certificates
+	export SSL_CERT_DIR="/etc/ssl/certs"
+	apt-install wget curl vim procps
+
+
+install-build-libs: bootstrap-debian
+	sudo apt-install build-essential
+
+
+build-magick: clean-build install-build-libs
+	mkdir -p build/magick
+	mkdir -p build/magick/imagemagick-7-full-7.1.1-27
+	mkdir -p deb
+	sudo apt-install -y bzip2 cairosvg gir1.2-pangocairo-1.0-dev gsfonts-other libbzip3-dev  \
+         libdjvulibre-dev libdjvulibre21 libfontconfig-dev libfreetype-dev libfreetype6-dev  \
+         libgif-dev libgs-dev libgvc6 libheif-dev libjpeg-dev libjpeg62 libjxl-dev libjxl-devtools  \
+         liblcms2-dev liblqr-dev liblzma-dev libopenexr-dev libopenjp2-7-dev libpango1.0-dev  \
+         libperl-dev libpng-dev libraqm-dev libraw-dev librsvg2-dev libtiff-dev libtiff5-dev  \
+         libwebp-dev libwebpdemux2 libwebpmux3 libwmf-dev libxml2-dev libzip-dev libzstd-dev  \
+         libzstd1 pango1.0-tools wmf
+	cd build/magick && \
+		wget https://github.com/ImageMagick/ImageMagick/archive/refs/tags/7.1.1-27.tar.gz -O ImageMagick-7.1.1-27.tar.gz && \
+		tar -xvzf ImageMagick-7.1.1-27.tar.gz
+	cd build/magick/ImageMagick-7.1.1-27 && \
+	./configure --disable-shared --disable-installed --disable-openmp  \
+                --prefix="$(shell pwd)/build/magick/imagemagick-7-full-7.1.1-27/usr/local"  \
+                --without-x --with-gslib --with-modules --with-bzlib -with-djvu --with-dps --with-fontconfig  \
+                --with-freetype --with-gslib --with-gvc --with-heic --with-jbig --with-jpeg --with-jxl  \
+                --with-dmr --with-lcms --with-lqr --with-lzma --with-magick-plus-plus --with-openexr  \
+                --with-openjp2 --with-pango --with-png --with-raqm --with-raw --with-rsvg --with-tiff  \
+                --with-webp --with-wmf --with-xml --with-zip --with-zlib --with-zstd && \
+    make && \
+    make install
+
+
+build-deb-magick: build-magick
+	cp -R scripts/imagemagick/DEBIAN build/magick/imagemagick-7-full-7.1.1-27/
+	dpkg-deb --build build/magick/imagemagick-7-full-7.1.1-27
+	cp build/magick/imagemagick-7-full-7.1.1-27.deb deb/
+
+
+bootstrap:
+	fab bootstrap
+
+
+deploy:
+	fab deploy
