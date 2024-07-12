@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "autopublisher"
-version = "3.0.0"
+version = "3.1.0"
 description = "Script for automatic publish news and updates from email to drupal site"
 authors = ["Alexey <escantor@gmail.com>"]
 classifiers = [
@@ -27,6 +27,7 @@ aiomisc = "^17.0"
 beautifulsoup4 = "~4.12"
 ConfigArgParse = "^1.7"
 EasyProcess = "~1.1"
+fabric3 = "^1.14.post1"
 html2text = "2020.1.16"
 mammoth = "~1.6"
 Pillow = "~10.2"
@@ -40,8 +41,7 @@ requests = "~2.31"
 # See for example https://github.com/appium/python-client/issues/863
 selenium = "==4.9.0"
 setproctitle = "^1.3"
-yarl="~=1.9"
-fabric = "^3.2.2"
+yarl = "~=1.9"
 
 [tool.poetry.group.dev.dependencies]
 aiomisc-pytest = "^1.1.1"
