@@ -63,12 +63,18 @@ build-magick: clean-deb
 	mkdir -p deb
 	fab --hosts $(APP_BUILD_HOST) --port $(APP_BUILD_PORT) -i $(APP_BUILD_SSH_KEY) build_magick
 
+# install debian build system and build app
 build: clean
 	mkdir -p dist
-	fab --hosts $(APP_BUILD_HOST) --port $(APP_BUILD_PORT) -i $(APP_BUILD_SSH_KEY) build_app
+	fab --hosts $(APP_BUILD_HOST) --port $(APP_BUILD_PORT) -i $(APP_BUILD_SSH_KEY) bootstrap_system_and_build_app
+
+# simple rebuild .whl
+rebuild: clean
+	mkdir -p dist
+	fab --hosts $(APP_BUILD_HOST) --port $(APP_BUILD_PORT) -i $(APP_BUILD_SSH_KEY) rebuild_app
 
 bootstrap:
 	fab --hosts $(APP_DEPLOY_HOST) --port $(APP_DEPLOY_PORT) -i $(APP_DEPLOY_SSH_KEY) bootstrap
 
-deploy: build
+deploy: rebuild
 	fab --hosts $(APP_DEPLOY_HOST) --port $(APP_DEPLOY_PORT) -i $(APP_DEPLOY_SSH_KEY) deploy

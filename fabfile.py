@@ -260,9 +260,7 @@ def load_manifest():
     return [item for item in items if item]
 
 
-def build_app():
-    set_env()
-    setup_build_system()
+def _build_app():
     run(f"rm -fr {env.BUILD_APP_DIR}")
     _mkdir(env.BUILD_APP_DIR)
     for item in load_manifest():
@@ -280,6 +278,17 @@ def build_app():
     )
     get(remote_path=f"{env.BUILD_APP_DIR}/dist/*", local_path="dist/")
     run(f"rm -fr {env.BUILD_APP_DIR}")
+
+
+def bootstrap_system_and_build_app():
+    set_env()
+    setup_build_system()
+    _build_app()
+
+
+def rebuild_app():
+    set_env()
+    _build_app()
 
 
 def _mkdir(path: str, use_sudo=False, chown=False):
