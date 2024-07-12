@@ -13,14 +13,19 @@ CI_PROJECT_NAME ?= $(shell echo $(PROJECT_PATH) | tr -cd "[:alnum:]")
 
 
 all:
-	@echo "make build 		- Build a docker image"
-	@echo "make lint 		- Syntax check with pylama"
-	@echo "make test 		- Test this project"
-	@echo "make format 		- Format project with ruff and black"
-	@echo "make upload 		- Upload this project to the docker-registry"
-	@echo "make clean 		- Remove files which creates by distutils"
-	@echo "make purge 		- Complete cleanup the project"
-	@echo "make start 		- Run application"
+	@echo "make clean           - Remove files which creates by distutils"
+	@echo "make clean-deb       - Remove 'deb/' folder with .deb packages"
+	@echo "make bootstrap       - Bootstrap Debian, install the necessary packages and install application"
+	@echo "make build           - Bootstrap Debian, install build packages and create .whl and requirements.txt"
+	@echo "make build-magick    - Build ImageMagick-7 '.deb' with '.pdf' format support"
+	@echo "make deploy          - Rebuild and install application on the server"
+	@echo "make develop         - Create a development environment and install the application into it"
+	@echo "make format          - Format project with ruff and black"
+	@echo "make lint            - Syntax check with ruff and mypy"
+	@echo "make purge           - Complete cleanup the project"
+	@echo "make rebuild         - Simply create .whl and requirements.txt"
+	@echo "make test            - Test this project"
+	@echo "make wheel           - Build application .whl and create requirements.txt"
 	@exit 0
 
 
