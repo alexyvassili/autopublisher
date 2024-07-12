@@ -81,6 +81,7 @@ def bootstrap():
     install_system_apps()
     install_gecko_driver()
     install_imagemagick()
+    create_app_user()
     install_app()
     set_service()
     restart_all()
@@ -89,6 +90,7 @@ def bootstrap():
 def deploy():
     set_env()
     run("uname -a")
+    check_dist()
     install_app()
     restart_all()
 
@@ -171,7 +173,6 @@ def create_app_user():
 
 
 def install_app():
-    create_app_user()
     if not exists(env.VENV_PYTHON_PATH):
         sudo(f"mkdir -p {env.INSTALL_PATH}")
         sudo(f"chown alexey {env.INSTALL_PATH}")
