@@ -7,7 +7,7 @@ mail-passwd: mail-passwd
 mail-from: mail@mail.com
 mail-alternate: mail-alternate@mail.com
 
-#site secrets
+# site secrets
 site-url: http://www.site.ru
 site-username: user
 site-passwd: passwd
