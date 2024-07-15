@@ -21,9 +21,9 @@ BASE_APPS = [
 ]
 
 PYTHON_PACKAGES = [
-    "libpython3.11-stdlib", "python3-pip", "python3-xvfbwrapper",
-    "python3.11-distutils", "python3.11-minimal", "python3.11-venv",
-    "xvfb",
+    "libpython3.11-stdlib", "python3-pip", "python3-poetry",
+    "python3-xvfbwrapper", "python3.11-distutils", "python3.11-minimal",
+    "python3.11-venv", "xvfb",
 ]
 
 SYSTEM_APPS = [
@@ -208,6 +208,16 @@ def set_service():
     sudo("systemctl enable autopublisher")
 
 
+def stop_service():
+    set_env()
+    sudo("systemctl stop autopublisher")
+
+
+def restart_service():
+    set_env()
+    restart_all()
+
+
 def restart_all():
     sudo("systemctl restart autopublisher")
 
@@ -284,6 +294,7 @@ def _build_app():
 def bootstrap_system_and_build_app():
     set_env()
     setup_build_system()
+    install_python()
     _build_app()
 
 

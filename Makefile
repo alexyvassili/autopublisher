@@ -83,3 +83,9 @@ bootstrap:
 
 deploy: rebuild
 	fab --hosts $(APP_DEPLOY_HOST) --port $(APP_DEPLOY_PORT) -i $(APP_DEPLOY_SSH_KEY) deploy
+
+stop-service:
+	fab --hosts $(APP_DEPLOY_HOST) --port $(APP_DEPLOY_PORT) -i $(APP_DEPLOY_SSH_KEY) stop_service
+
+restart-service:
+	fab --hosts $(APP_DEPLOY_HOST) --port $(APP_DEPLOY_PORT) -i $(APP_DEPLOY_SSH_KEY) restart_service
