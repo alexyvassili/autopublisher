@@ -1,165 +1,312 @@
 """
-    This is fabfile for deploying autopublisher
-    on debian stretch on custom preinstalled pyenv python
+This is fabfile for install and update autopublisher on server
+Use this file through `make` command
 """
+
 import os
 
 from fabric.state import env
-from fabric.api import run, sudo
-from fabric.contrib.files import exists, upload_template
+from fabric.api import get, put, run, sudo
+from fabric.contrib.files import exists
 
 
-DEPLOY_HOST = os.environ.get("DEPLOY_HOST")
-DEPLOY_USER = os.environ.get("DEPLOY_USER")
-assert DEPLOY_HOST and DEPLOY_USER
-env.hosts = [f'{DEPLOY_USER}@{DEPLOY_HOST}']
+BASE_PACKAGES = [
+    "apt-transport-https", "ca-certificates", "locales",
+    "tzdata", "openssl",
+]
 
-# для Fabric SOFFICE_PATH всегда соответствует Linux
-SOFFICE_PATH = "/opt/libreoffice7.6/program/soffice"
+BASE_APPS = [
+    "curl", "mc", "procps",
+    "vim", "wget",
+]
+
+PYTHON_PACKAGES = [
+    "libpython3.11-stdlib", "python3-pip", "python3-poetry",
+    "python3-xvfbwrapper", "python3.11-distutils", "python3.11-minimal",
+    "python3.11-venv", "xvfb",
+]
+
+SYSTEM_APPS = [
+    "firefox-esr", "firefox-esr-l10n-ru", "libmagic1",
+    "libreoffice-writer",
+]
+
+IMAGEMAGICK_DEPENDENCIES = [
+    "ghostscript", "hicolor-icon-theme", "libdjvulibre21",
+    "libgs10", "libheif1", "libjxl0.9",
+    "liblqr-1-0", "libopenexr-3-1-30", "libpangocairo-1.0-0",
+    "libraqm0", "libraw-bin", "libraw23",
+    "librsvg2-2", "librsvg2-bin", "libwebpdemux2",
+    "libwebpmux3", "libwmflite-0.2-7", "libzip4",
+    "netpbm",
+]
+
+IMAGEMAGICK_BUILD_DEPENDENCIES = [
+    "bzip2", "cairosvg", "gir1.2-pangocairo-1.0-dev",
+    "gsfonts-other", "libbzip3-dev", "libdjvulibre-dev",
+    "libdjvulibre21", "libfontconfig-dev", "libfreetype-dev",
+    "libfreetype6-dev", "libgif-dev", "libgs-dev",
+    "libgvc6", "libheif-dev", "libjpeg-dev",
+    "libjpeg62", "libjxl-dev", "libjxl-devtools",
+    "liblcms2-dev", "liblqr-dev", "liblzma-dev",
+    "libopenexr-dev", "libopenjp2-7-dev", "libpango1.0-dev",
+    "libperl-dev", "libpng-dev", "libraqm-dev",
+    "libraw-dev", "librsvg2-dev", "libtiff-dev",
+    "libtiff5-dev", "libwebp-dev", "libwebpdemux2",
+    "libwebpmux3", "libwmf-dev", "libxml2-dev",
+    "libzip-dev", "libzstd-dev", "libzstd1",
+    "pango1.0-tools", "wmf",
+]
+
+
+def set_env():
+    env.GECKODRIVER_URL = "https://github.com/mozilla/geckodriver/releases/" \
+                          "download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz"
+    env.IMAGEMAGICK_URL = "https://github.com/ImageMagick/ImageMagick/" \
+                          "archive/refs/tags/7.1.1-27.tar.gz"
+    env.INSTALL_PATH = "/usr/local/share/autopublisher"
+    env.VENV_PYTHON_PATH = f"{env.INSTALL_PATH}/bin/python3"
+    env.BUILD_DIR = "/tmp/build"
+    env.BUILD_APP_DIR = "/tmp/autopublisher"
+    env.VENV_BUILD_DIR = f"{env.BUILD_APP_DIR}/env"
+    env.VENV_BUILD_PYTHON_PATH = f"{env.VENV_BUILD_DIR}/bin/python3"
 
 
 def bootstrap():
     set_env()
-    run('uname -a')
-    check_interpreter()
-    install_system_libs()
-    install_libreoffice()
-    create_folders()
-    get_src()
-    set_secrets()
-    create_virtualenv()
-    install_venv_libs()
-    download_gecko_driver()
-    install()
+    check_deb()
+    check_dist()
+    setup_debian()
+    install_python()
+    install_system_apps()
+    install_gecko_driver()
+    install_imagemagick()
+    create_app_user()
+    install_app()
     set_service()
     restart_all()
 
 
 def deploy():
     set_env()
-    run('uname -a')
-    get_src()
-    set_secrets()
-    install_venv_libs()
-    install()
+    run("uname -a")
+    check_dist()
+    install_app()
     restart_all()
 
 
-def set_env():
-    env.USER = DEPLOY_USER
-    env.BASE_PATH = f'/home/{env.USER}/projects'
-    env.VENV_PATH = f'/home/{env.USER}/.python3/venvs'
-    env.PROJECT_NAME = 'autopublisher'
-    env.REMOTE_PROJECT_PATH = os.path.join(env.BASE_PATH, env.PROJECT_NAME)
-    env.SECRETS_REMOTE_PATH = os.path.join(env.BASE_PATH, env.PROJECT_NAME, env.PROJECT_NAME)
-    env.REMOTE_VENV_PATH = os.path.join(env.VENV_PATH, env.PROJECT_NAME)
-    env.GIT_REPO_PATH = "https://github.com/alexyvassili/autopublisher.git"
-    env.PYTHON_VERSION = "3.11"
-    env.BASE_REMOTE_INTERPRETER = f'/usr/bin/python{env.PYTHON_VERSION}'
-    env.VENV_REMOTE_PYTHON_PATH = f'{env.REMOTE_VENV_PATH}/bin/python3'
+def check_deb():
+    if not os.path.exists("deb/imagemagick-7-full-7.1.1-27.deb"):
+        raise FileNotFoundError(
+            "File not found: deb/imagemagick-7-full-7.1.1-27.deb"
+            "Maybe you need to run `make build-magick` "
+            "to build imagemagick package"
+        )
 
 
-def check_interpreter():
-    print(f'Check {env.BASE_REMOTE_INTERPRETER}', end='...')
-    if not exists(env.BASE_REMOTE_INTERPRETER):
-        print(f'error.\nInterpreter not found, load Python {env.PYTHON_VERSION}')
-        import sys
-        sys.exit(1)
-    print('OK')
+def check_dist():
+    if not os.path.exists("dist"):
+        raise FileNotFoundError(
+            "Directory `dist/` does not exists. "
+            "Maybe you need to run `make build` to build app"
+        )
+    items = os.listdir("dist")
+    whls = [item for item in items if item.endswith(".whl")]
+    if not whls:
+        raise FileNotFoundError(
+            "No .whl found in `dist/` directory. "
+            "Maybe you need to run `make build` to build app"
+        )
+    if "requirements.txt" not in items:
+        raise FileNotFoundError(
+            "File `requirements.txt` was not found in `dist/` directory. "
+            "Maybe you need to run `make build` to build app"
+        )
 
 
-def install_system_libs():
-    sudo('apt-get install aptitude')
-    sudo('aptitude update')
-    sudo('aptitude install -y imagemagick git xvfb x11-utils firefox-esr default-jre libmagic1 unrar libffi-dev')
+def setup_debian():
+    put(
+        local_path="debian/config/sources.list",
+        remote_path="/etc/apt/sources.list",
+        use_sudo=True,
+    )
+    sudo("apt-get update && apt-get install -y aptitude")
+    sudo("aptitude update && aptitude upgrade -y")
+    sudo("aptitude install -y " + " ".join(BASE_PACKAGES))
+    sudo("update-ca-certificates")
+    run("export SSL_CERT_DIR='/etc/ssl/certs'")
+    sudo("aptitude install -y " + " ".join(BASE_APPS))
 
 
-def install_libreoffice():
-    if not exists(SOFFICE_PATH):
-        run('wget http://download.documentfoundation.org/libreoffice/stable/7.6.2/deb/x86_64/LibreOffice_7.6.2_Linux_x86-64_deb.tar.gz -O /tmp/libreoffice.tar.gz')
-        run('mkdir /tmp/libreoffice_setup')
-        # распаковываем все файлы без сохранения структуры директорий
-        run('tar xvzf /tmp/libreoffice.tar.gz -C /tmp/libreoffice_setup/ --strip-components 2')
-        sudo('dpkg -i /tmp/libreoffice_setup/*.deb')
-        run('rm /tmp/libreoffice_setup/*')
-        run('rmdir /tmp/libreoffice_setup')
-        run('rm /tmp/libreoffice.tar.gz')
+def setup_build_system():
+    setup_debian()
+    sudo("aptitude install -y build-essential")
 
 
-def create_folders():
-    _mkdir(env.REMOTE_PROJECT_PATH, use_sudo=True, chown=True)
-    _mkdir(env.VENV_PATH, use_sudo=True, chown=True)
+def install_python():
+    sudo("aptitude install -y " + " ".join(PYTHON_PACKAGES))
 
 
-def get_src():
-    if not exists(os.path.join(env.REMOTE_PROJECT_PATH, '.git')):
-        run(f'git clone {env.GIT_REPO_PATH} {env.REMOTE_PROJECT_PATH}')
-    else:
-        run(f'cd {env.REMOTE_PROJECT_PATH}; git pull')
+def install_system_apps():
+    sudo("aptitude install -y " + " ".join(SYSTEM_APPS))
 
 
-def set_secrets():
-    # upload_template(
-    #     os.path.join(env.PROJECT_NAME, 'secrets.py'),
-    #     os.path.join(env.REMOTE_PROJECT_PATH, env.PROJECT_NAME)
-    # )
-    upload_template('autopublisher/secrets.py', env.SECRETS_REMOTE_PATH)
+def install_gecko_driver():
+    run(f"wget {env.GECKODRIVER_URL} -O /tmp/geckodriver.tar.gz")
+    _mkdir("/tmp/geckodriver")
+    run("tar xvzf /tmp/geckodriver.tar.gz -C /tmp/geckodriver")
+    sudo("cp /tmp/geckodriver/geckodriver /usr/local/bin")
+    run("rm -fr /tmp/geckodriver")
+    run("rm /tmp/geckodriver.tar.gz")
 
 
-def create_virtualenv():
-    if not exists(env.VENV_REMOTE_PYTHON_PATH):
-        sudo('aptitude update')
-        sudo('aptitude install -y python3.11-venv python3-pip')
-        run(f"python3.11 -m venv {env.REMOTE_VENV_PATH}")
-        pip = os.path.join(env.REMOTE_VENV_PATH, 'bin', 'pip3')
-        run(f'{pip} install --upgrade pip')
-        run(f'{pip} install six wheel')
+def install_imagemagick():
+    sudo("aptitude install -y " + " ".join(IMAGEMAGICK_DEPENDENCIES))
+    put(local_path="deb/imagemagick-7-full-7.1.1-27.deb", remote_path="/tmp/")
+    sudo("dpkg -i /tmp/imagemagick-7-full-7.1.1-27.deb")
 
 
-def install_venv_libs():
-    requirements_txt = os.path.join(env.REMOTE_PROJECT_PATH, 'requirements.txt')
-    run(f'{env.VENV_REMOTE_PYTHON_PATH} -m pip install -r {requirements_txt}')
+def create_app_user():
+    run("id -u alexey &>/dev/null || sudo useradd -g users alexey")
+    sudo(f"mkdir -p /home/alexey")
+    sudo(f"chown alexey /home/alexey")
 
 
-def download_gecko_driver():
-    if not exists('/usr/bin/geckodriver'):
-        run('wget https://github.com/mozilla/geckodriver/releases/download/v0.33.0/geckodriver-v0.33.0-linux64.tar.gz -O /tmp/geckodriver.tar.gz')
-        run('mkdir -p /tmp/geckodriver')
-        run('tar xvzf /tmp/geckodriver.tar.gz -C /tmp/geckodriver')
-        sudo('cp /tmp/geckodriver/geckodriver /usr/bin')
-        run('rm /tmp/geckodriver/*')
-        run('rmdir /tmp/geckodriver')
-        run('rm /tmp/geckodriver.tar.gz')
-
-
-def install():
-    run(f'cd {env.REMOTE_PROJECT_PATH} && make sdist && {env.VENV_REMOTE_PYTHON_PATH} -m pip install dist/{env.PROJECT_NAME}*')
+def install_app():
+    if not exists(env.VENV_PYTHON_PATH):
+        sudo(f"mkdir -p {env.INSTALL_PATH}")
+        sudo(f"chown alexey {env.INSTALL_PATH}")
+        sudo(f"python3.11 -m venv {env.INSTALL_PATH}", user="alexey")
+        sudo(
+            f"{env.INSTALL_PATH}/bin/pip install -U pip setuptools wheel",
+            user="alexey",
+        )
+    run("rm -fr /tmp/dist")
+    _mkdir("/tmp/dist")
+    put(local_path="dist/*", remote_path="/tmp/dist/")
+    sudo(
+        f"{env.INSTALL_PATH}/bin/pip install -r /tmp/dist/requirements.txt",
+        user="alexey",
+    )
+    sudo(
+        f"{env.INSTALL_PATH}/bin/pip install /tmp/dist/*.whl",
+        user="alexey",
+    )
+    sudo(
+        f"find {env.INSTALL_PATH}/bin/ -name 'autopublisher*' "
+        "-exec ln -snf '{}' /usr/local/bin/ ';'"
+    )
+    run("rm -fr /tmp/dist")
 
 
 def set_service():
-    sudo(f'cp {env.REMOTE_PROJECT_PATH}/fabdeploy/telegrambot.service /etc/systemd/system/')
-    sudo('systemctl enable telegrambot')
+    put(
+        local_path="fabdeploy/autopublisher.service",
+        remote_path="/etc/systemd/system/",
+        use_sudo=True,
+    )
+    sudo("systemctl enable autopublisher")
+
+
+def stop_service():
+    set_env()
+    sudo("systemctl stop autopublisher")
+
+
+def restart_service():
+    set_env()
+    restart_all()
 
 
 def restart_all():
-    sudo('systemctl restart telegrambot')
+    sudo("systemctl restart autopublisher")
+
+
+def clean_build():
+    run(f"rm -fr {env.BUILD_DIR}")
+
+
+def build_magick():
+    set_env()
+    clean_build()
+    setup_build_system()
+    _mkdir(env.BUILD_DIR)
+    _mkdir(f"{env.BUILD_DIR}/imagemagick-7-full-7.1.1-27")
+    sudo("aptitude install -y " + " ".join(IMAGEMAGICK_BUILD_DEPENDENCIES))
+    run(
+        f"cd {env.BUILD_DIR} && "
+        f"wget {env.IMAGEMAGICK_URL} -O ImageMagick-7.1.1-27.tar.gz && "
+        f"tar -xvzf ImageMagick-7.1.1-27.tar.gz"
+    )
+    run(
+        f"cd {env.BUILD_DIR}/ImageMagick-7.1.1-27 && "
+        f"./configure --disable-shared --disable-installed --disable-openmp "
+        f"--prefix=\"{env.BUILD_DIR}/imagemagick-7-full-7.1.1-27/usr/local\" "
+        f"--without-x --with-gslib --with-modules --with-bzlib -with-djvu "
+        f"--with-dps --with-fontconfig --with-freetype --with-gslib "
+        f"--with-gvc --with-heic --with-jbig --with-jpeg --with-jxl "
+        f"--with-dmr --with-lcms --with-lqr --with-lzma "
+        f"--with-magick-plus-plus --with-openexr --with-openjp2 "
+        f"--with-pango --with-png --with-raqm --with-raw --with-rsvg "
+        f"--with-tiff --with-webp --with-wmf --with-xml --with-zip "
+        f"--with-zlib --with-zstd && "
+        f"make && "
+        f"make install"
+    )
+    put(
+        local_path="debian/imagemagick/DEBIAN",
+        remote_path=f"{env.BUILD_DIR}/imagemagick-7-full-7.1.1-27/",
+    )
+    run(f"dpkg-deb --build {env.BUILD_DIR}/imagemagick-7-full-7.1.1-27")
+    get(
+        remote_path=f"{env.BUILD_DIR}/imagemagick-7-full-7.1.1-27.deb",
+        local_path="deb/"
+    )
+    clean_build()
+
+
+def load_manifest():
+    with open("MANIFEST.in") as f:
+        items = [item.strip() for item in f.readlines()]
+    return [item for item in items if item]
+
+
+def _build_app():
+    run(f"rm -fr {env.BUILD_APP_DIR}")
+    _mkdir(env.BUILD_APP_DIR)
+    for item in load_manifest():
+        put(local_path=item, remote_path=f"{env.BUILD_APP_DIR}/")
+    run(f"python3.11 -m venv {env.VENV_BUILD_DIR}")
+    run(f"{env.VENV_BUILD_DIR}/bin/pip install -U pip setuptools wheel")
+    run(
+        f"cd {env.BUILD_APP_DIR} && "
+        f"poetry env use {env.VENV_BUILD_PYTHON_PATH} && "
+        f"poetry --version && "
+        f"poetry env info && "
+        f"poetry install && "
+        f"poetry build -f wheel && "
+        f"poetry export -f requirements.txt -o dist/requirements.txt"
+    )
+    get(remote_path=f"{env.BUILD_APP_DIR}/dist/*", local_path="dist/")
+    run(f"rm -fr {env.BUILD_APP_DIR}")
+
+
+def bootstrap_system_and_build_app():
+    set_env()
+    setup_build_system()
+    install_python()
+    _build_app()
+
+
+def rebuild_app():
+    set_env()
+    _build_app()
 
 
 def _mkdir(path: str, use_sudo=False, chown=False):
     if use_sudo:
-        sudo(f'mkdir -p {path}')
+        sudo(f"mkdir -p {path}")
         if chown:
-            sudo(f'chown {env.USER} {path}')
+            sudo(f"chown {env.USER} {path}")
     else:
-        run('mkdir -p %s' % path)
-
-
-def _put_template(template_name, remote_path, use_sudo=False):
-    upload_template(
-        os.path.join('fabdeploy', template_name),
-        remote_path,
-        context={
-            'app_name': env.PROJECT_NAME,
-        },
-        use_sudo=use_sudo,
-    )
+        run(f"mkdir -p {path}")

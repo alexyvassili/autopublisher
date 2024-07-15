@@ -1,0 +1,24 @@
+Package: imagemagick-7-full
+Source: imagemagick
+Version: 7.1.1-27
+Architecture: amd64
+Maintainer: ImageMagick Packaging Team <pkg-gmagick-im-team@lists.alioth.debian.org>
+Depends: libc6 (>= 2.35), libdjvulibre21, libgs10, libheif1, libjxl0.9, liblqr-1-0, libopenexr-3-1-30, libpangocairo-1.0-0, libraqm0, libraw-bin, libraw23, librsvg2-2, librsvg2-bin, libwebpdemux2, libwebpmux3, libwmflite-0.2-7, libzip4, hicolor-icon-theme
+Recommends: ghostscript, netpbm
+Suggests: autotrace, cups-bsd | lpr | lprng, curl, enscript, ffmpeg, gimp, gnuplot, grads, graphviz, groff-base, hp2xx, html2ps, libwmf-bin, mplayer, povray, radiance, sane-utils, texlive-base-bin, transfig, libraw-bin, xdg-utils
+Breaks: libmagickcore-dev (<< 8:6.9.2.10+dfsg-2~)
+Replaces: imagemagick (<< 8:6.9.2.10+dfsg-2~)
+Provides: imagemagick
+Section: graphics
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://www.imagemagick.org/
+Description: image manipulation programs
+ ImageMagick is a software suite to create, edit, and compose bitmap images.
+ It can read, convert and write images in a variety of formats (over 100)
+ including DPX, EXR, GIF, JPEG, JPEG-2000, PDF, PhotoCD, PNG, Postscript,
+ SVG, and TIFF. Use ImageMagick to translate, flip, mirror, rotate, scale,
+ shear and transform images, adjust image colors, apply various special
+ effects, or draw text, lines, polygons, ellipses and Bézier curves.
+ All manipulations can be achieved through shell commands as well as through
+ an X11 graphical interface (display).

@@ -5,11 +5,11 @@ After=multi-user.target
 [Service]
 User=alexey
 Group=users
-WorkingDirectory=/home/alexey/projects/autopublisher
-ExecStart=/home/alexey/.python3/venvs/autopublisher/bin/autopublisher
+WorkingDirectory=/usr/local/share/autopublisher
+ExecStart=/usr/local/bin/autopublisher
 Type=simple
 NotifyAccess=all
-KillSignal=SIGTERM
+KillSignal=SIGINT
 
 [Install]
 WantedBy=multi-user.target
