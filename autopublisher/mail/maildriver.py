@@ -30,9 +30,9 @@ class CurrentMail:
         self.mail_id = mail_id
         self.folder = mail_folder
         self.metadata = mail_metadata
-        self.text = get_text_from_html(mail_metadata['Body'])
+        self.text = get_text_from_html(mail_metadata["Body"])
         self.about = get_mail_about(mail_metadata, self.text)
-        self.attachments = self.metadata['Attachments']
+        self.attachments = self.metadata["Attachments"]
         self.prepare()
 
     def clear(self):
@@ -47,12 +47,12 @@ class CurrentMail:
 
     def prepare(self):
         if len(self.attachments) == 1 and \
-                self.attachments[0].endswith('.zip'):
+                self.attachments[0].endswith(".zip"):
             unzip_without_structure(
                 os.path.join(self.folder, self.attachments[0]), self.folder
             )
         elif len(self.attachments) == 1 and \
-                self.attachments[0].endswith('.rar'):
+                self.attachments[0].endswith(".rar"):
             self.about += f"\nUnpack {self.attachments[0]} to {self.folder}\n"
             response = unrar(
                 os.path.join(self.folder, self.attachments[0]), self.folder
@@ -116,16 +116,16 @@ def mark_mail_as_unread(mail_id):
 
 
 def get_mail_about(mail_metadata, body_text=None):
-    body = body_text or mail_metadata['Body']
+    body = body_text or mail_metadata["Body"]
 
-    about = f"""{mail_metadata['Date']}
-Subject: {mail_metadata['Subject']}
+    about = f"""{mail_metadata["Date"]}
+Subject: {mail_metadata["Subject"]}
 
 {body}
 
 Attachments:
 """
-    for i, att in enumerate(mail_metadata['Attachments']):
+    for i, att in enumerate(mail_metadata["Attachments"]):
         about += f"{i+1}) {att}\n"
     return about
 
@@ -138,7 +138,7 @@ def get_text_from_docx(docx):
 
 def get_text_for_news(current_mail):
     docxs = prepare.get_fullpath_files_for_extension(
-        current_mail.folder, 'docx',
+        current_mail.folder, "docx",
     )
     if not docxs:
         text = prepare.get_text_from_mail_body(current_mail.metadata)
@@ -154,7 +154,7 @@ def get_text_for_news(current_mail):
     # заголовок из заголовка письма.
     title, sentences = prepare.prepare_text(text)
     if not title:
-        title = current_mail.metadata['Subject'] or "Новость"
+        title = current_mail.metadata["Subject"] or "Новость"
 
     if "Fwd: " in title:
         title = title.split("Fwd: ")[1]
@@ -169,8 +169,8 @@ def get_text_for_news(current_mail):
 
 
 def get_images_for_news(current_mail):
-    jpegs = (prepare.get_files_for_extension(current_mail.folder, 'jpg') +
-             prepare.get_files_for_extension(current_mail.folder, 'jpeg'))
+    jpegs = (prepare.get_files_for_extension(current_mail.folder, "jpg") +
+             prepare.get_files_for_extension(current_mail.folder, "jpeg"))
     if not jpegs:
         return []
 

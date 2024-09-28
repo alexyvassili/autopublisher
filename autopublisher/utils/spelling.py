@@ -3,16 +3,16 @@ import requests
 
 def send_line_to_yandex(line):
     response = requests.post(
-        'https://speller.yandex.net/services/spellservice.json/checkText',
-        data={'text': line},
+        "https://speller.yandex.net/services/spellservice.json/checkText",
+        data={"text": line},
     )
     return response.json()
 
 
 def fix_mispell(text, mispell):
-    fix = mispell['s'][0]
-    start = mispell['pos']
-    end = mispell['pos'] + mispell['len']
+    fix = mispell["s"][0]
+    start = mispell["pos"]
+    end = mispell["pos"] + mispell["len"]
     return text[:start] + fix + text[end:]
 
 

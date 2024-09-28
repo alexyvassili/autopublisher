@@ -66,7 +66,7 @@ def login_to_site(attempts: int = 3):
         attempts -= 1
         if not attempts:
             raise ValueError("Не удалось открыть страницу логина на сайте")
-    name_input = driver.find_element(By.ID, 'edit-name')
+    name_input = driver.find_element(By.ID, "edit-name")
     name_input.send_keys(config.site_username)
     passwd_input = driver.find_element(By.ID, "edit-pass")
     passwd_input.send_keys(config.site_passwd)

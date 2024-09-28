@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 try:
     import magic
 except ImportError:
-    message = '\n'.join([
+    message = "\n".join([
         "Error while importing python-magic",
         "Libmagic C library installation is needed",
         "Debian/Ubuntu:",
@@ -60,7 +60,7 @@ class Image:
 
     def create(self, image_file: telegram.files.file.File):
         iso_fmt_time = datetime.now().isoformat()
-        self.name = format_jpeg_name(f'mainpage_image_{iso_fmt_time}.jpg')
+        self.name = format_jpeg_name(f"mainpage_image_{iso_fmt_time}.jpg")
         self.folder = os.path.join(
             config.tmp_folder,
             config.tmp_folder_prefix + get_salt()
@@ -82,14 +82,14 @@ current_image = Image()
 
 def get_salt(size=8):
     chars = string.ascii_uppercase + string.digits
-    return ''.join(random.choice(chars) for _ in range(size))
+    return "".join(random.choice(chars) for _ in range(size))
 
 
 def edit_save(update, context):
     text = update.message.text
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f'Понятно, {text}',
+        text=f"Понятно, {text}",
     )
     try:
         current_image._end_date = add_date(text, current_image._start_date)
@@ -131,18 +131,18 @@ def image_loader(update, context):
     logging.info("Loaded image to: %s", current_image.path)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text='Загружен файл: {}'.format(text)
+        text="Загружен файл: {}".format(text)
     )
-    if not text.startswith('JPEG'):
+    if not text.startswith("JPEG"):
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text='Это не JPEG файл. Отмена.'
+            text="Это не JPEG файл. Отмена."
         )
         current_image.clear()
         return ConversationHandler.END
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text='До какой даты или на какой срок сохранить картинку?'
+        text="До какой даты или на какой срок сохранить картинку?"
     )
     return TEXT
 
@@ -152,5 +152,5 @@ image_handler = ConversationHandler(
     states={
         TEXT: [MessageHandler(Filters.text, edit_save)],
     },
-    fallbacks=[CommandHandler('echo', echo)],
+    fallbacks=[CommandHandler("echo", echo)],
 )

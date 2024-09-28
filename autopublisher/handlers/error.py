@@ -10,7 +10,7 @@ def error_handler(update, context):
     tbc = traceback.format_exc()
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text='Произошла ошибка!',
+        text="Произошла ошибка!",
     )
     if len(tbc) > TELEGRAM_API_MESSAGE_LIMIT:
         tbc = tbc[-TELEGRAM_API_MESSAGE_LIMIT:]
