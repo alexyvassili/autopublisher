@@ -1,17 +1,19 @@
 import logging
 
+import telegram.update
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    CommandHandler, MessageHandler, ConversationHandler, CallbackQueryHandler
+    CallbackQueryHandler,
+    CommandHandler,
+    ConversationHandler,
+    Filters,
+    MessageHandler,
 )
-from telegram.ext import Filters
 from telegram.ext.callbackcontext import CallbackContext
-import telegram.update
 
 from autopublisher.config import config
-import autopublisher.mail.maildriver as maildriver
-import autopublisher.publish.prepare as prepare
-import autopublisher.publish.publish as publish
+from autopublisher.mail import maildriver
+from autopublisher.publish import prepare, publish
 from autopublisher.utils.telegram import owner_only
 
 
@@ -23,22 +25,27 @@ NEWS, RASP, CANCEL, YES, NO, EDIT = range(6)
 current_mail = maildriver.CurrentMail()  # Хранит состояние текущего письма
 
 
-def check_mail(update, context, mail_from, name_for_msg):
+def check_mail(
+        update: telegram.update.Update,
+        context: CallbackContext,
+        mail_from: str,
+        name_for_msg: str,
+) -> int:
     user = update.message.from_user
     logging.info("User %s started the conversation.", user.first_name)
 
     keyboard = [
         [InlineKeyboardButton("News", callback_data=str(NEWS)),
          InlineKeyboardButton("Rasp", callback_data=str(RASP)),
-         InlineKeyboardButton("Cancel", callback_data=str(CANCEL))
-         ]
+         InlineKeyboardButton("Cancel", callback_data=str(CANCEL)),
+         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     context.bot.send_message(
         chat_id=update.effective_chat.id, text="Проверяю почту...",
     )
     mail_id, mail_folder, mail_metadata = maildriver.load_most_old_mail_from(
-        mail_from
+        mail_from,
     )
     logging.info("Sending request to get mail from %s", mail_from)
     if mail_id is None:
@@ -61,21 +68,26 @@ def check_mail(update, context, mail_from, name_for_msg):
 
 
 @owner_only
-def from_koshelev_check_mail(update: telegram.update.Update, context: CallbackContext):
+def from_koshelev_check_mail(
+        update: telegram.update.Update,
+        context: CallbackContext,
+) -> int:
     return check_mail(update, context, config.mail_from, "Кошелева")
 
 
 @owner_only
-def from_me_check_mail(update: telegram.update.Update, context: CallbackContext):
+def from_me_check_mail(
+        update: telegram.update.Update, context: CallbackContext,
+) -> int:
     """
-    TODO: Warning! Будет найдено и предложено к обработке 
-     любое письмо с моего адреса. Хотя я планирую добавить 
+    TODO: Warning! Будет найдено и предложено к обработке
+     любое письмо с моего адреса. Хотя я планирую добавить
      что-то типа if "LOTOSHINO" in Subject
     """
     return check_mail(update, context, config.alternate_mail, "меня")
 
 
-def news(update: telegram.update.Update, context: CallbackContext):
+def news(update: telegram.update.Update, context: CallbackContext) -> int:
     if not current_mail.sentences:
         title, news_sentences = maildriver.get_text_for_news(current_mail)
         current_mail.title, current_mail.sentences = title, news_sentences
@@ -87,8 +99,7 @@ def news(update: telegram.update.Update, context: CallbackContext):
     keyboard = [
         [InlineKeyboardButton("Yes", callback_data=str(YES)),
          InlineKeyboardButton("Edit", callback_data=str(EDIT)),
-         InlineKeyboardButton("Cancel", callback_data=str(CANCEL)),
-         ]
+         InlineKeyboardButton("Cancel", callback_data=str(CANCEL))],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     context.bot.send_message(
@@ -100,7 +111,9 @@ def news(update: telegram.update.Update, context: CallbackContext):
     return TEXT
 
 
-def news_prepare(update: telegram.update.Update, context: CallbackContext):
+def news_prepare(
+        update: telegram.update.Update, context: CallbackContext,
+) -> int:
     current_mail.images = maildriver.get_images_for_news(current_mail)
     if current_mail.images:
         imgs = "\n".join(
@@ -111,10 +124,8 @@ def news_prepare(update: telegram.update.Update, context: CallbackContext):
         imgs = "Картинок нет."
 
     keyboard = [
-        [
-            InlineKeyboardButton("Publish", callback_data=str(YES)),
-            InlineKeyboardButton("Cancel", callback_data=str(NO)),
-        ],
+        [InlineKeyboardButton("Publish", callback_data=str(YES)),
+         InlineKeyboardButton("Cancel", callback_data=str(NO))],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     context.bot.send_message(
@@ -125,14 +136,18 @@ def news_prepare(update: telegram.update.Update, context: CallbackContext):
     return PUBLISH
 
 
-def edit_wait(update: telegram.update.Update, context: CallbackContext):
+def edit_wait(
+        update: telegram.update.Update, context: CallbackContext,
+) -> int:
     context.bot.send_message(
         chat_id=update.effective_chat.id, text="Кидай текст",
     )
     return TEXT
 
 
-def edit_save(update: telegram.update.Update, context: CallbackContext):
+def edit_save(
+        update: telegram.update.Update, context: CallbackContext,
+) -> int:
     text = update.message.text
     sentences = [
         line.replace("\n", " ")
@@ -142,7 +157,7 @@ def edit_save(update: telegram.update.Update, context: CallbackContext):
     return news(update, context)
 
 
-def rasp(update: telegram.update.Update, context: CallbackContext):
+def rasp(update: telegram.update.Update, context: CallbackContext) -> int:
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Подготовка...",
@@ -162,7 +177,9 @@ def rasp(update: telegram.update.Update, context: CallbackContext):
     return ConversationHandler.END
 
 
-def publish_news(update: telegram.update.Update, context: CallbackContext):
+def publish_news(
+        update: telegram.update.Update, context: CallbackContext,
+) -> int:
     html = prepare.html_from_sentences(current_mail.sentences)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -178,7 +195,7 @@ def publish_news(update: telegram.update.Update, context: CallbackContext):
     return ConversationHandler.END
 
 
-def cancel(update: telegram.update.Update, context: CallbackContext):
+def cancel(update: telegram.update.Update, context: CallbackContext) -> int:
     current_mail.rollback()
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -187,7 +204,7 @@ def cancel(update: telegram.update.Update, context: CallbackContext):
     return ConversationHandler.END
 
 
-def echo(update: telegram.update.Update, context: CallbackContext):
+def echo(update: telegram.update.Update, context: CallbackContext) -> None:
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=f"Fallback echo\n{update.message.text}",
@@ -195,26 +212,18 @@ def echo(update: telegram.update.Update, context: CallbackContext):
 
 
 mail_handler = ConversationHandler(
-        entry_points=[
-            CommandHandler("mail", from_koshelev_check_mail),
-            CommandHandler("mymail", from_me_check_mail),
-        ],
-        states={
-            SEARCH: [
-                CallbackQueryHandler(news, pattern=f"^{NEWS}$"),
-                CallbackQueryHandler(rasp, pattern=f"^{RASP}$"),
-                CallbackQueryHandler(cancel, pattern=f"^{CANCEL}$"),
-            ],
-            TEXT: [
-                CallbackQueryHandler(news_prepare, pattern=f"^{YES}$"),
-                CallbackQueryHandler(edit_wait, pattern=f"^{EDIT}$"),
-                MessageHandler(Filters.text, edit_save),
-                CallbackQueryHandler(cancel, pattern=f"^{CANCEL}$"),
-            ],
-            PUBLISH: [
-                CallbackQueryHandler(publish_news, pattern=f"^{YES}$"),
-                CallbackQueryHandler(cancel, pattern=f"^{NO}$"),
-            ],
-        },
-        fallbacks=[CommandHandler("echo", echo)],
-    )
+    entry_points=[CommandHandler("mail", from_koshelev_check_mail),
+                  CommandHandler("mymail", from_me_check_mail)],
+    states={
+        SEARCH: [CallbackQueryHandler(news, pattern=f"^{NEWS}$"),
+                 CallbackQueryHandler(rasp, pattern=f"^{RASP}$"),
+                 CallbackQueryHandler(cancel, pattern=f"^{CANCEL}$")],
+        TEXT: [CallbackQueryHandler(news_prepare, pattern=f"^{YES}$"),
+               CallbackQueryHandler(edit_wait, pattern=f"^{EDIT}$"),
+               MessageHandler(Filters.text, edit_save),
+               CallbackQueryHandler(cancel, pattern=f"^{CANCEL}$")],
+        PUBLISH: [CallbackQueryHandler(publish_news, pattern=f"^{YES}$"),
+                  CallbackQueryHandler(cancel, pattern=f"^{NO}$")],
+    },
+    fallbacks=[CommandHandler("echo", echo)],
+)

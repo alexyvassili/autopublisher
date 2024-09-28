@@ -1,9 +1,8 @@
 import logging
-import os
 import string
 import random
 import shutil
-from datetime import datetime, date
+from datetime import datetime
 from pathlib import Path
 import pytz
 

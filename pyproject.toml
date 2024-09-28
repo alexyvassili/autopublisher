@@ -93,9 +93,8 @@ build-backend = "poetry.core.masonry.api"
 line-length = 88
 target-version = "py311"
 exclude = [
-#    "autopublisher/handlers",
     "autopublisher/handlers/imagebot.py",
-    "autopublisher/handlers/mailbot.py",
+#    "autopublisher/handlers/mailbot.py",
     "autopublisher/mail",
     "autopublisher/publish",
     "autopublisher/services",
@@ -111,6 +110,7 @@ ignore = [
     "ANN204",  # "Missing return type annotation for special method `__init__`"
     "ANN401",  # "Dynamically typed expressions (typing.Any) are disallowed in `value`"
     "RUF001",  # "String contains ambiguous letter"
+    "RUF002",  # "Docstring contains ambiguous letter"
     "RUF003",  # "Comment contains ambiguous letter"
 #    "C408",  # "Unnecessary `dict` call (rewrite as a literal)"
 #    "COM812",  # "Trailing comma missing"
