@@ -5,7 +5,9 @@ import shutil
 from autopublisher.config import config
 import autopublisher.mail.mail as mail
 import autopublisher.publish.prepare as prepare
-from autopublisher.utils.document import docx2html, get_text_from_html, unzip_without_structure, unrar
+from autopublisher.utils.document import (
+    docx2html, get_text_from_html, unzip_without_structure, unrar
+)
 from autopublisher.utils.spelling import spell_line
 
 
@@ -44,11 +46,17 @@ class CurrentMail:
         self.clear()
 
     def prepare(self):
-        if len(self.attachments) == 1 and self.attachments[0].endswith('.zip'):
-            unzip_without_structure(os.path.join(self.folder, self.attachments[0]), self.folder)
-        elif len(self.attachments) == 1 and self.attachments[0].endswith('.rar'):
+        if len(self.attachments) == 1 and \
+                self.attachments[0].endswith('.zip'):
+            unzip_without_structure(
+                os.path.join(self.folder, self.attachments[0]), self.folder
+            )
+        elif len(self.attachments) == 1 and \
+                self.attachments[0].endswith('.rar'):
             self.about += f"\nUnpack {self.attachments[0]} to {self.folder}\n"
-            response = unrar(os.path.join(self.folder, self.attachments[0]), self.folder)
+            response = unrar(
+                os.path.join(self.folder, self.attachments[0]), self.folder
+            )
             self.about += f"{response}\n"
         else:
             return
@@ -56,8 +64,10 @@ class CurrentMail:
 
     def update_about(self):
         self.about += "\nUnpacked Attachments:\n"
-        attach_files = [f for f in os.listdir(self.folder)
-                     if os.path.isfile(os.path.join(self.folder, f))]
+        attach_files = [
+            f for f in os.listdir(self.folder)
+            if os.path.isfile(os.path.join(self.folder, f))
+        ]
         for i, att in enumerate(attach_files):
             self.about += f"{i+1}) {att}\n"
 
@@ -127,7 +137,9 @@ def get_text_from_docx(docx):
 
 
 def get_text_for_news(current_mail):
-    docxs = prepare.get_fullpath_files_for_extension(current_mail.folder, 'docx')
+    docxs = prepare.get_fullpath_files_for_extension(
+        current_mail.folder, 'docx',
+    )
     if not docxs:
         text = prepare.get_text_from_mail_body(current_mail.metadata)
     elif len(docxs) > 1:
@@ -138,7 +150,8 @@ def get_text_for_news(current_mail):
     # Сломано письмом Кошелева от 29.01.2020
     # Причина: тело письма не содержит заголовка новости,
     # заголовок новости только в заголовке письма.
-    # Решение: пока не меняем диалог, просто возьмем заголовок из залоговка письма.
+    # Решение: пока не меняем диалог, просто возьмем
+    # заголовок из заголовка письма.
     title, sentences = prepare.prepare_text(text)
     if not title:
         title = current_mail.metadata['Subject'] or "Новость"
@@ -161,6 +174,10 @@ def get_images_for_news(current_mail):
     if not jpegs:
         return []
 
-    jpegs_for_news = prepare.prepare_jpegs_for_news(jpegs, current_mail.folder,
-                                            os.path.join(current_mail.folder, prepare.IMG_FOR_NEWS_FOLDER))
+    jpegs_for_news = prepare.prepare_jpegs_for_news(
+        jpegs,
+        current_mail.folder,
+        # TODO: переделать всё на pathlib
+        os.path.join(current_mail.folder, prepare.IMG_FOR_NEWS_FOLDER)
+    )
     return jpegs_for_news

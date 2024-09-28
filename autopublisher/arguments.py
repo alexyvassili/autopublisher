@@ -11,10 +11,10 @@ from aiomisc.log import LogFormat, LogLevel
 
 
 def validate(
-    type: Callable[[Any], Any], constrain: Callable[[Any], bool]
+    type_: Callable[[Any], Any], constrain: Callable[[Any], bool]
 ) -> Callable[[Any], Any]:
     def wrapper(value: Any) -> Any:
-        value = type(value)
+        value = type_(value)
         if not constrain(value):
             raise ArgumentTypeError
         return value
@@ -23,6 +23,7 @@ def validate(
 
 
 uint = validate(int, constrain=lambda x: x > 0)
+
 
 parser = configargparse.ArgumentParser(
     allow_abbrev=False,
@@ -72,5 +73,9 @@ group.add_argument("--telegram-bot-proxy-username", type=str, default=None)
 group.add_argument("--telegram-bot-proxy-passwd", type=str, default=None)
 
 group = parser.add_argument_group("Logging options")
-group.add_argument("--log-level", default=LogLevel.info, choices=LogLevel.choices())
-group.add_argument("--log-format", choices=LogFormat.choices(), default=LogFormat.color)
+group.add_argument(
+    "--log-level", default=LogLevel.info, choices=LogLevel.choices(),
+)
+group.add_argument(
+    "--log-format", choices=LogFormat.choices(), default=LogFormat.color,
+)

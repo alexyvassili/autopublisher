@@ -52,7 +52,10 @@ def unzip_without_structure(zip_name, folder):
                 continue
 
             # copy file (taken from zipfile's extract)
-            with zip_ref.open(member) as source, open(os.path.join(folder, filename), "wb") as target:
+            with (
+                zip_ref.open(member) as source,
+                open(os.path.join(folder, filename), "wb") as target
+            ):
                 shutil.copyfileobj(source, target)
 
 
@@ -80,17 +83,25 @@ def replace_font_in_docx_xml(xml_name, old_font, new_font):
 
 
 def add_cant_split_to_tr(tr: ElementTree.Element,  NS, NS_PREFIX):
-    """Запрещает перенос строк на другую страницу в таблице в вордовском документе"""
+    """Запрещает перенос строк на другую страницу
+       в таблице в вордовском документе
+    """
     if tr.tag != f"{NS_PREFIX}tr":
-        raise ValueError("Function add_cant_split get non-tr tag or broken NAMESPACE")
+        raise ValueError(
+            "Function add_cant_split get non-tr tag or broken NAMESPACE"
+        )
     trpr = tr.find('w:trPr', NS)
     if trpr is None:
-        logging.warning("Function add_cant_split can't find trPr element in tr")
+        logging.warning(
+            "Function add_cant_split can't find trPr element in tr"
+        )
         trpr = ElementTree.Element("{%s}trPr" % NS['w'])
         tr.append(trpr)
     cantSplit = trpr.find('w:cantSplit', NS)
     if cantSplit is None:
-        newCantSplit  = ElementTree.Element(f'{NS_PREFIX}cantSplit', {f'{NS_PREFIX}val': 'true'})
+        newCantSplit  = ElementTree.Element(
+            f'{NS_PREFIX}cantSplit', {f'{NS_PREFIX}val': 'true'}
+        )
         trpr.append(newCantSplit)
 
 
@@ -125,7 +136,10 @@ def pack_docx(docx_name, folder_from):
 
 
 def format_rasp_docx(docx, mail_folder):
-    unpack_docx(os.path.join(mail_folder, docx), os.path.join(mail_folder, WORD_TMP_DIR))
+    unpack_docx(
+        os.path.join(mail_folder, docx),
+        os.path.join(mail_folder, WORD_TMP_DIR),
+    )
     xml_full_name = os.path.join(mail_folder, XML_NAME)
     formatted_filename = os.path.join(mail_folder, FORMATTED_FILE)
     replace_font_in_docx_xml(xml_full_name, OLD_FONT, NEW_FONT)
@@ -156,16 +170,26 @@ def resize_jpeg_on_wide_size(jpeg, new_jpeg, wide_side_size):
      $(echo ${jpeg%%.*}_1.jpg); done`
     """
     width, height = get_image_size(jpeg)
-    m_width, m_height = get_resized_image_size(width, height, wide_side=wide_side_size)
+    m_width, m_height = get_resized_image_size(
+        width, height, wide_side=wide_side_size,
+    )
 
-    call([IMAGEMAGICK_PATH, jpeg, "-resize", str(m_width), "-quality", "100", new_jpeg])
+    call([
+        IMAGEMAGICK_PATH,
+        jpeg,
+        "-resize", str(m_width),
+        "-quality", "100",
+        new_jpeg,
+    ])
 
 
 def docx2html(docx):
     with open(docx, "rb") as docx_file:
         result = mammoth.convert_to_html(docx_file)
-        html = result.value  # The generated HTML
-        messages = result.messages  # Any messages, such as warnings during conversion
+        # The generated HTML
+        html = result.value
+        # Any messages, such as warnings during conversion
+        messages = result.messages
     return html, messages
 
 
@@ -178,7 +202,8 @@ def get_lines_from_html(html):
     text = h.handle(html)
     # html2text вставляет внутри абзацев переносы строк (видимо, для красоты),
     # а сами абзацы отделяет четырьмя переносами строк
-    # поэтому разбиваем текст на абзацы, а переносы строк внутри абзацев убираем.
+    # поэтому разбиваем текст на абзацы,
+    # а переносы строк внутри абзацев убираем.
     lines = [line.strip().replace('\n', ' ')
              for line in re.split(r'\n{2,}', text)
              if line and not re.match(r'^\s+$', line)]
@@ -195,7 +220,13 @@ def unrar_(rarfile, folder):
 
 
 def unrar(rarfile, folder):
-    p = Popen(["unrar", "x", rarfile, folder], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    # TODO: переписать на новое API subprocess
+    p = Popen(
+        ["unrar", "x", rarfile, folder],
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=PIPE
+    )
     output, err = p.communicate()
     rc = p.returncode
     output = output.decode()

@@ -73,16 +73,26 @@ lower_case_letters = {'а': 'a',
 
 
 def transliterate(string):
-    for cyrillic_string, latin_string in capital_letters_transliterated_to_multiple_letters.items():
-        string = re.sub("%s([а-я])" % cyrillic_string, '%s\1' % latin_string, string)
+    for cyrillic_string, latin_string in \
+            capital_letters_transliterated_to_multiple_letters.items():
+        string = re.sub(
+            "%s([а-я])" % cyrillic_string,
+            '%s\1' % latin_string,
+            string,
+        )
 
     for dictionary in (capital_letters, lower_case_letters):
 
         for cyrillic_string, latin_string in dictionary.items():
             string = re.sub(cyrillic_string, latin_string, string)
 
-    for cyrillic_string, latin_string in capital_letters_transliterated_to_multiple_letters.items():
-        string = re.sub(cyrillic_string, latin_string.upper(), string)
+    for cyrillic_string, latin_string in \
+            capital_letters_transliterated_to_multiple_letters.items():
+        string = re.sub(
+            cyrillic_string,
+            latin_string.upper(),
+            string,
+        )
 
     return string
 

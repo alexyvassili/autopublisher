@@ -1,6 +1,8 @@
 import os
 
-from autopublisher.utils.transliterate import transliterate, replace_non_alphabetic_symbols
+from autopublisher.utils.transliterate import (
+    transliterate, replace_non_alphabetic_symbols
+)
 
 
 def format_jpeg_name(jpeg_name):
@@ -16,9 +18,15 @@ def get_file_size_mb(file_name):
 
 
 def get_files_for_extension(folder, ext):
-    return [item for item in os.listdir(folder)
-            if os.path.isfile(os.path.join(folder, item)) and item.lower().endswith(ext)]
+    return [
+        item for item in os.listdir(folder)
+        if os.path.isfile(os.path.join(folder, item))
+        and item.lower().endswith(ext)
+    ]
 
 
 def get_fullpath_files_for_extension(folder, ext):
-    return [os.path.join(folder, item) for item in get_files_for_extension(folder, ext)]
+    return [
+        os.path.join(folder, item)
+        for item in get_files_for_extension(folder, ext)
+    ]

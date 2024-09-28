@@ -7,8 +7,14 @@ from datetime import datetime
 from razdel import sentenize
 
 from autopublisher.config import IMAGEMAGICK_PATH, SOFFICE_PATH, config
-from autopublisher.utils.document import format_rasp_docx, cd, resize_jpeg_on_wide_size, docx2html, get_lines_from_html
-from autopublisher.utils.file import format_jpeg_name, get_file_size_mb, get_files_for_extension, get_fullpath_files_for_extension
+from autopublisher.utils.document import (
+    format_rasp_docx, cd, resize_jpeg_on_wide_size,
+    docx2html, get_lines_from_html
+)
+from autopublisher.utils.file import (
+    format_jpeg_name, get_file_size_mb,
+    get_files_for_extension, get_fullpath_files_for_extension
+)
 
 
 log = logging.getLogger(__name__)
@@ -40,7 +46,10 @@ def check_rasp_folder(folder):
 
 def rasp(mail_folder):
     RASP_NAME = 'rasp_' + datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
-    IMAGE_NAME = os.path.join(mail_folder, RASP_NAME + '.' + config.rasp_image_format)
+    IMAGE_NAME = os.path.join(
+        mail_folder,
+        RASP_NAME + '.' + config.rasp_image_format,
+    )
 
     # rasp folder must contain only one .docx and no jpegs
     check_rasp_folder(mail_folder)
@@ -63,7 +72,9 @@ def rasp(mail_folder):
         subprocess.call(soffice_command)
         PDF_NAME = formatted_docx_name.split('.')[0] + '.pdf'
         if not os.path.exists(PDF_NAME):
-            raise PrepareError(f"Can't find formatted pdf: {formatted_docx_name}")
+            raise PrepareError(
+                f"Can't find formatted pdf: {formatted_docx_name}"
+            )
 
         # previous version of this command:
         # ['convert', '-density', '300', PDF_NAME, '-quality', '100', JPG_NAME]
@@ -81,7 +92,9 @@ def rasp(mail_folder):
         ]
         log.info('RUN: %s', ' '.join(imagemagick_command))
         subprocess.call(imagemagick_command)
-    rasp_images = get_files_for_extension(mail_folder, config.rasp_image_format)
+    rasp_images = get_files_for_extension(
+        mail_folder, config.rasp_image_format
+    )
     rasp_images.sort()
     log.info("Rasp images: %s", ', '.join(rasp_images))
 
@@ -102,7 +115,9 @@ def prepare_jpegs_for_news(jpegs, folder, jpegs_folder):
         new_jpeg = formatted_names_jpegs[jpeg]
         new_jpeg_fullname = os.path.join(jpegs_folder, new_jpeg)
         if size > 1.5:
-            resize_jpeg_on_wide_size(jpeg_fullname, new_jpeg_fullname, WIDE_SIDE_IMAGE)
+            resize_jpeg_on_wide_size(
+                jpeg_fullname, new_jpeg_fullname, WIDE_SIDE_IMAGE
+            )
         else:
             shutil.copyfile(jpeg_fullname, new_jpeg_fullname)
         jpegs_for_news.append(new_jpeg_fullname)
@@ -137,7 +152,8 @@ def prepare_text(text):
         title, news_text = text.split('\n', 1)
     except ValueError:
         # Если в тексте один абзац и нет заголовка,
-        # вернем пустой тайтл, и возмем заголовок из заголовка письма на уровне выше
+        # вернем пустой тайтл, и возмем заголовок
+        # из заголовка письма на уровне выше
         title = ""
         news_text = text
     news_text = news_text.replace('\n', ' ')
@@ -199,27 +215,16 @@ def get_text_from_mail_body(metadata):
 
 
 def news(mail_folder):
-    jpegs = get_files_for_extension(mail_folder, 'jpg') or get_files_for_extension(mail_folder, 'jpeg')
+    jpegs = get_files_for_extension(mail_folder, 'jpg') or \
+            get_files_for_extension(mail_folder, 'jpeg')
     if not jpegs:
         raise PrepareError('Can\'t publish news without images')
 
-    jpegs_for_news = prepare_jpegs_for_news(jpegs, mail_folder,
-                                            os.path.join(mail_folder, IMG_FOR_NEWS_FOLDER))
+    jpegs_for_news = prepare_jpegs_for_news(
+        jpegs,
+        mail_folder,
+        os.path.join(mail_folder, IMG_FOR_NEWS_FOLDER),
+    )
 
     title, html = prepare_html_for_news(mail_folder)
     return title, html, jpegs_for_news
-
-
-def news_folder(mail_folder):
-    """Prepare new materials from .doc or .zip/.rar
-        or break execution"""
-    extensions = ['jpeg', 'rar', 'zip', 'doc', 'docx']
-    profiles = [{'jpeg': 'many', 'rar': 0, 'zip': 0, 'doc': 0, 'docx': 1},  # новость в docx
-                {'jpeg': 'many', 'rar': 0, 'zip': 0, 'doc': 1, 'docx': 0},  # новость в doc
-                {'jpeg': 'many', 'rar': 0, 'zip': 0, 'doc': 0, 'docx': 0},  # новость в теле письма
-                {'jpeg': 0, 'rar': 1, 'zip': 0, 'doc': 0, 'docx': 0},  # новость в архиве rar
-                {'jpeg': 0, 'rar': 0, 'zip': 1, 'doc': 0, 'docx': 0},  # новость в архиве zip
-                ]
-    counts = {}
-    for ext in extensions:
-        counts[ext] = get_files_for_extension(mail_folder, ext)

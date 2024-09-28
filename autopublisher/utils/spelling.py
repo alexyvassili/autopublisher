@@ -2,8 +2,10 @@ import requests
 
 
 def send_line_to_yandex(line):
-    response = requests.post('https://speller.yandex.net/services/spellservice.json/checkText',
-                             data={'text': line})
+    response = requests.post(
+        'https://speller.yandex.net/services/spellservice.json/checkText',
+        data={'text': line},
+    )
     return response.json()
 
 

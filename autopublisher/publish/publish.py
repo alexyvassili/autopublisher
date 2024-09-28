@@ -132,9 +132,15 @@ def news(title, html, jpegs):
     file_uploader_btn = "edit-field-image-und-{}-upload-button"
 
     for j, filename in enumerate(jpegs):
-        driver.find_element(By.ID, file_uploader_id.format(j)).send_keys(filename)
-        driver.find_element(By.ID, file_uploader_btn.format(j)).click()
-        wait.until(EC.presence_of_element_located((By.ID, file_uploader_id.format(j + 1))))
+        driver.find_element(
+            By.ID, file_uploader_id.format(j)
+        ).send_keys(filename)
+        driver.find_element(
+            By.ID, file_uploader_btn.format(j)
+        ).click()
+        wait.until(EC.presence_of_element_located(
+            (By.ID, file_uploader_id.format(j + 1))
+        ))
 
     driver.find_element(By.ID, "edit-submit").click()
 
