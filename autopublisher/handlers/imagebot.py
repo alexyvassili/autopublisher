@@ -104,7 +104,6 @@ def download_image(image_file: telegram.files.file.File) -> tuple[Path, str]:
     return image_tmp_folder, image_full_name
 
 
-
 @dataclass
 class Image:
     name: str
