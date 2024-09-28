@@ -20,6 +20,7 @@ def set_config(args: Namespace) -> None:
     config.mail_login = args.mail_login
     config.mail_passwd = args.mail_passwd
     config.mail_from = args.mail_from
+    config.alternate_mail = args.mail_alternate
     config.site_url = args.site_url
     config.site_username = args.site_username
     config.site_passwd = args.site_passwd
