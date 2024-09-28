@@ -32,6 +32,7 @@ def check_mail(update, context, mail_from, name_for_msg):
     reply_markup = InlineKeyboardMarkup(keyboard)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Проверяю почту...')
     mail_id, mail_folder, mail_metadata = maildriver.load_most_old_mail_from(mail_from)
+    logging.info("Sending request to get mail from %s", mail_from)
     if mail_id is None:
         context.bot.send_message(chat_id=update.effective_chat.id, text=f'Новых писем от {name_for_msg} нет!')
         return ConversationHandler.END

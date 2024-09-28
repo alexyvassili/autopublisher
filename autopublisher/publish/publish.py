@@ -56,10 +56,16 @@ def close_driver(driver):
         display.stop()
 
 
-def login_to_site():
+def login_to_site(attempts: int = 3):
     driver: WebDriver = get_driver()
-    driver.get(config.site_login_url)
-    assert "Лотошино" in driver.title
+    # TODO: add retry
+    while True:
+        driver.get(config.site_login_url)
+        if "Лотошино" in driver.title:
+            break
+        attempts -= 1
+        if not attempts:
+            raise ValueError("Не удалось открыть страницу логина на сайте")
     name_input = driver.find_element(By.ID, 'edit-name')
     name_input.send_keys(config.site_username)
     passwd_input = driver.find_element(By.ID, "edit-pass")
