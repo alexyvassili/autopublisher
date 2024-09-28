@@ -1,5 +1,8 @@
 from functools import wraps
 
+import telegram.update
+from telegram.ext.callbackcontext import CallbackContext
+
 from autopublisher.config import config
 
 

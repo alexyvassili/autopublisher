@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 import telegram.update
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -11,6 +12,7 @@ from telegram.ext import (
 )
 from telegram.ext.callbackcontext import CallbackContext
 
+from autopublisher.config import TELEGRAM_API_MESSAGE_LIMIT
 from autopublisher.config import config
 from autopublisher.mail import maildriver
 from autopublisher.publish import prepare, publish
@@ -23,6 +25,21 @@ SEARCH, TEXT, PUBLISH, RASPLOAD = range(4)
 NEWS, RASP, CANCEL, YES, NO, EDIT = range(6)
 
 current_mail = maildriver.CurrentMail()  # Хранит состояние текущего письма
+
+
+def catch_error(
+        update: telegram.update.Update, context: CallbackContext
+) -> int:
+    tbc = traceback.format_exc()
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Произошла ошибка!",
+    )
+    if len(tbc) > TELEGRAM_API_MESSAGE_LIMIT:
+        tbc = tbc[-TELEGRAM_API_MESSAGE_LIMIT:]
+    context.bot.send_message(chat_id=update.effective_chat.id, text=tbc)
+    current_mail.rollback()
+    return ConversationHandler.END
 
 
 def check_mail(
@@ -167,7 +184,10 @@ def rasp(update: telegram.update.Update, context: CallbackContext) -> int:
         chat_id=update.effective_chat.id,
         text="Публикуем расписание",
     )
-    url = publish.rasp(current_mail.folder, rasp_images)
+    try:
+        url = publish.rasp(current_mail.folder, rasp_images)
+    except Exception:
+        return catch_error(update=update, context=context)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Опубликовано!",
@@ -185,7 +205,10 @@ def publish_news(
         chat_id=update.effective_chat.id,
         text="Публикуем",
     )
-    url = publish.news(current_mail.title, html, current_mail.images)
+    try:
+        url = publish.news(current_mail.title, html, current_mail.images)
+    except Exception:
+        return catch_error(update=update, context=context)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Опубликовано!",

@@ -13,7 +13,7 @@ from autopublisher.utils.document import (
     docx2html, get_lines_from_html
 )
 from autopublisher.utils.file import (
-    format_jpeg_name, get_file_size_mb,
+    format_img_name, get_file_size_mb,
     get_files_for_extension, get_fullpath_files_for_extension
 )
 
@@ -109,7 +109,7 @@ def prepare_jpegs_for_news(jpegs, folder, jpegs_folder):
     """jpegs: full-path jpegs"""
     jpegs_for_news = []
     os.mkdir(jpegs_folder)
-    formatted_names_jpegs = {jpeg: format_jpeg_name(jpeg) for jpeg in jpegs}
+    formatted_names_jpegs = {jpeg: format_img_name(jpeg) for jpeg in jpegs}
     for jpeg in jpegs:
         jpeg_fullname = os.path.join(folder, jpeg)
         size = get_file_size_mb(jpeg_fullname)

@@ -6,7 +6,7 @@ from autopublisher.utils.transliterate import (
 )
 
 
-def format_jpeg_name(jpeg_name):
+def format_img_name(jpeg_name):
     jpeg_name = transliterate(jpeg_name)
     jpeg_name = replace_non_alphabetic_symbols(jpeg_name)
     return jpeg_name.lower()

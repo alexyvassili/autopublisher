@@ -94,7 +94,6 @@ line-length = 88
 target-version = "py311"
 exclude = [
     "autopublisher/handlers/imagebot.py",
-#    "autopublisher/handlers/mailbot.py",
     "autopublisher/mail",
     "autopublisher/publish",
     "autopublisher/services",
