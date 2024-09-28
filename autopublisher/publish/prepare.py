@@ -4,6 +4,7 @@ import subprocess
 import shutil
 from bs4 import BeautifulSoup
 from datetime import datetime
+from pathlib import Path
 from razdel import sentenize
 
 from autopublisher.config import IMAGEMAGICK_PATH, SOFFICE_PATH, config
@@ -30,7 +31,7 @@ class PrepareError(Exception):
     pass
 
 
-def check_rasp_folder(folder):
+def check_rasp_folder(folder: Path):
     docxs = [item for item in os.listdir(folder) if item.endswith("docx")]
     if not docxs:
         raise PrepareError("Can't find word file in mail")
@@ -44,7 +45,7 @@ def check_rasp_folder(folder):
         raise PrepareError("Jpeg or png in rasp mail found!")
 
 
-def rasp(mail_folder):
+def rasp(mail_folder: Path):
     RASP_NAME = "rasp_" + datetime.today().strftime("%Y-%m-%d-%H-%M-%S")
     IMAGE_NAME = os.path.join(
         mail_folder,
@@ -134,7 +135,7 @@ def prepare_mainpage_jpeg(image: "imagebot: Image"):
         shutil.move(tmp_image_path, image.path)
 
 
-def prepare_html_for_news(mail_folder):
+def prepare_html_for_news(mail_folder: Path):
     docxs = get_fullpath_files_for_extension(mail_folder, "docx")
     if not docxs:
         # title, html = get_html_news_from_mail_body(mail_metadata["Body"])
@@ -214,7 +215,7 @@ def get_text_from_mail_body(metadata):
     return get_news_text_from_fwd_mail(metadata["Body"])
 
 
-def news(mail_folder):
+def news(mail_folder: Path):
     jpegs = get_files_for_extension(mail_folder, "jpg") or \
             get_files_for_extension(mail_folder, "jpeg")
     if not jpegs:

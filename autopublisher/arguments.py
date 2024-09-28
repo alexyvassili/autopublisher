@@ -1,17 +1,17 @@
 import argparse
-import os
 import pwd
 from argparse import ArgumentTypeError
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
-from yarl import URL
 
 import configargparse
 from aiomisc.log import LogFormat, LogLevel
+from yarl import URL
 
 
 def validate(
-    type_: Callable[[Any], Any], constrain: Callable[[Any], bool]
+    type_: Callable[[Any], Any], constrain: Callable[[Any], bool],
 ) -> Callable[[Any], Any]:
     def wrapper(value: Any) -> Any:
         value = type_(value)
@@ -31,7 +31,7 @@ parser = configargparse.ArgumentParser(
     description="Script for automatic publish news "
                 "and updates from email to drupal site",
     default_config_files=[
-        os.path.join(os.path.expanduser("~"), ".autopublisher.conf"),
+        (Path("~") / ".autopublisher.conf").expanduser(),
         "/etc/autopublisher/autopublisher.conf",
     ],
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -41,7 +41,7 @@ parser = configargparse.ArgumentParser(
 parser.add_argument("-D", "--debug", action="store_true")
 
 parser.add_argument(
-    "-u", "--user", required=False, help="Change process UID", type=pwd.getpwnam
+    "-u", "--user", required=False, help="Change process UID", type=pwd.getpwnam,
 )
 
 parser.add_argument(

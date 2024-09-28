@@ -7,6 +7,7 @@ import mammoth
 import html2text
 import subprocess
 import xml.etree.ElementTree as ElementTree
+from pathlib import Path
 from PIL import Image
 from io import BytesIO
 from subprocess import call, Popen, PIPE
@@ -25,8 +26,8 @@ NEW_FONT = "Times New Roman"
 
 class cd:
     """Context manager for changing the current working directory"""
-    def __init__(self, newPath):
-        self.newPath = os.path.expanduser(newPath)
+    def __init__(self, newPath: Path):
+        self.newPath = newPath.expanduser()
 
     def __enter__(self):
         self.savedPath = os.getcwd()
@@ -36,7 +37,7 @@ class cd:
         os.chdir(self.savedPath)
 
 
-def zipdir(path, ziph):
+def zipdir(path: Path, ziph):
     # ziph is zipfile handle
     for root, dirs, files in os.walk(path):
         for file in files:

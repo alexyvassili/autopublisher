@@ -1,14 +1,15 @@
 import logging
 import os
 from argparse import Namespace
+from pathlib import Path
 from sys import argv
 
 from aiomisc_log import basic_config
 from setproctitle import setproctitle
 
 from autopublisher.arguments import parser
-from autopublisher.services.telegrambot import TelegramBot
 from autopublisher.config import config
+from autopublisher.services.telegrambot import TelegramBot
 
 
 log = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ def run_master(name: str, args: Namespace) -> None:
         proxy_url=args.telegram_bot_proxy_url,
         proxy_port=args.telegram_bot_proxy_port,
         proxy_username=args.telegram_bot_proxy_username,
-        proxy_passwd=args.telegram_bot_proxy_passwd
+        proxy_passwd=args.telegram_bot_proxy_passwd,
     )
     service.start()
 
@@ -55,6 +56,6 @@ def main() -> None:
         os.setgid(args.user.pw_gid)
         os.setuid(args.user.pw_uid)
 
-    app_name = os.path.basename(argv[0])
+    app_name = Path(argv[0]).name
 
     run_master(app_name, args)

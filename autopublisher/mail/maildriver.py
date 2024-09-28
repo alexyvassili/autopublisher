@@ -1,6 +1,7 @@
 import os
 import logging
 import shutil
+from pathlib import Path
 
 from autopublisher.config import config
 import autopublisher.mail.mail as mail
@@ -17,7 +18,7 @@ log = logging.getLogger(__name__)
 class CurrentMail:
     def __init__(self):
         self.mail_id = None
-        self.folder = None
+        self.folder: Path | None = None
         self.metadata = None
         self.text = None
         self.title = None
@@ -26,7 +27,7 @@ class CurrentMail:
         self.images = None
         self.about = None
 
-    def init_mail(self, mail_id, mail_folder, mail_metadata):
+    def init_mail(self, mail_id, mail_folder: Path, mail_metadata):
         self.mail_id = mail_id
         self.folder = mail_folder
         self.metadata = mail_metadata
@@ -88,10 +89,8 @@ def load_most_old_mail_from(mail_from):
         new_mails_ids = mail.get_new_mails_from(connection, mail_from)
         if new_mails_ids:
             mail_id = new_mails_ids[0]
-            mail_folder = os.path.join(
-                config.tmp_folder,
-                config.tmp_folder_prefix + mail_id.decode(),
-            )
+            mail_folder_name = config.tmp_folder_prefix + mail_id.decode()
+            mail_folder = config.tmp_folder / mail_folder_name
             message = mail.get_message(connection, mail_id)
             mail_metadata = mail.get_mail_metadata(message)
             mail.save_email(message, mail_folder)
