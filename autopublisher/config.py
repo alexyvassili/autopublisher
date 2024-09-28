@@ -51,7 +51,7 @@ class Config:
     web_driver_wait: int = 20
 
     @property
-    def tmp_folder(self) -> str:
+    def tmp_folder(self) -> Path:
         return TMP_FOLDER
 
     @property

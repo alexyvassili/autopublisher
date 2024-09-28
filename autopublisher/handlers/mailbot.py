@@ -5,6 +5,8 @@ from telegram.ext import (
     CommandHandler, MessageHandler, ConversationHandler, CallbackQueryHandler
 )
 from telegram.ext import Filters
+from telegram.ext.callbackcontext import CallbackContext
+import telegram.update
 
 from autopublisher.config import config
 import autopublisher.mail.maildriver as maildriver
@@ -59,12 +61,12 @@ def check_mail(update, context, mail_from, name_for_msg):
 
 
 @owner_only
-def from_koshelev_check_mail(update, context):
+def from_koshelev_check_mail(update: telegram.update.Update, context: CallbackContext):
     return check_mail(update, context, config.mail_from, "Кошелева")
 
 
 @owner_only
-def from_me_check_mail(update, context):
+def from_me_check_mail(update: telegram.update.Update, context: CallbackContext):
     """
     TODO: Warning! Будет найдено и предложено к обработке 
      любое письмо с моего адреса. Хотя я планирую добавить 
@@ -73,7 +75,7 @@ def from_me_check_mail(update, context):
     return check_mail(update, context, config.alternate_mail, "меня")
 
 
-def news(update, context):
+def news(update: telegram.update.Update, context: CallbackContext):
     if not current_mail.sentences:
         title, news_sentences = maildriver.get_text_for_news(current_mail)
         current_mail.title, current_mail.sentences = title, news_sentences
@@ -98,7 +100,7 @@ def news(update, context):
     return TEXT
 
 
-def news_prepare(update, context):
+def news_prepare(update: telegram.update.Update, context: CallbackContext):
     current_mail.images = maildriver.get_images_for_news(current_mail)
     if current_mail.images:
         imgs = "\n".join(
@@ -123,14 +125,14 @@ def news_prepare(update, context):
     return PUBLISH
 
 
-def edit_wait(update, context):
+def edit_wait(update: telegram.update.Update, context: CallbackContext):
     context.bot.send_message(
         chat_id=update.effective_chat.id, text="Кидай текст",
     )
     return TEXT
 
 
-def edit_save(update, context):
+def edit_save(update: telegram.update.Update, context: CallbackContext):
     text = update.message.text
     sentences = [
         line.replace("\n", " ")
@@ -140,7 +142,7 @@ def edit_save(update, context):
     return news(update, context)
 
 
-def rasp(update, context):
+def rasp(update: telegram.update.Update, context: CallbackContext):
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Подготовка...",
@@ -160,7 +162,7 @@ def rasp(update, context):
     return ConversationHandler.END
 
 
-def publish_news(update, context):
+def publish_news(update: telegram.update.Update, context: CallbackContext):
     html = prepare.html_from_sentences(current_mail.sentences)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -176,7 +178,7 @@ def publish_news(update, context):
     return ConversationHandler.END
 
 
-def cancel(update, context):
+def cancel(update: telegram.update.Update, context: CallbackContext):
     current_mail.rollback()
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -185,7 +187,7 @@ def cancel(update, context):
     return ConversationHandler.END
 
 
-def echo(update, context):
+def echo(update: telegram.update.Update, context: CallbackContext):
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=f"Fallback echo\n{update.message.text}",

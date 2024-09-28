@@ -34,6 +34,7 @@ Pillow = "~10.2"
 python-dateutil = "~2.8"
 python-magic = "~0.4.27"
 python-telegram-bot = "12.8"
+pytz = "^2024"
 PyVirtualDisplay = "3.0"
 razdel = "~0.5"
 requests = "~2.31"
@@ -92,7 +93,9 @@ build-backend = "poetry.core.masonry.api"
 line-length = 88
 target-version = "py311"
 exclude = [
-    "autopublisher/handlers",
+#    "autopublisher/handlers",
+    "autopublisher/handlers/imagebot.py",
+    "autopublisher/handlers/mailbot.py",
     "autopublisher/mail",
     "autopublisher/publish",
     "autopublisher/services",
@@ -105,6 +108,7 @@ exclude = [
 select = ["ALL"]
 ignore = [
     "ANN101",  # "Missing type annotation for `self` in method"
+    "ANN204",  # "Missing return type annotation for special method `__init__`"
     "ANN401",  # "Dynamically typed expressions (typing.Any) are disallowed in `value`"
     "RUF001",  # "String contains ambiguous letter"
     "RUF003",  # "Comment contains ambiguous letter"
@@ -112,9 +116,12 @@ ignore = [
 #    "COM812",  # "Trailing comma missing"
     "D",  # docstrings
     "EM101",  # "Exception must not use a string literal, assign to variable first"
+    "FLY002",  # "Consider f-string instead of string join"
 #    "FIX002",  # "Line contains TO-DO, consider resolving the issue"
 #    "PLR0913",  # "Too many arguments in function definition"
 #    "S101",  # "Use of `assert` detected" - it's an anti-bug measure
+    "S311",  # "Standard pseudo-random generators are not suitable for cryptographic purposes"
+    "RET503",  # "Missing explicit `return` at the end of function able to return non-`None` value"
     "TD002",  # "Missing author in TO-DO"
     "TD003",  # "Missing issue link on the line following this TO-DO"
     "TRY003",  # "Avoid specifying long messages outside the exception class"

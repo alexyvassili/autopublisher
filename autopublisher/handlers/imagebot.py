@@ -4,11 +4,14 @@ import string
 import random
 import shutil
 from datetime import datetime, date
+from pathlib import Path
+import pytz
 
-import telegram
 from telegram import ChatAction
 from telegram.ext import CommandHandler, MessageHandler, ConversationHandler
 from telegram.ext import Filters
+from telegram.ext.callbackcontext import CallbackContext
+import telegram.update
 
 from autopublisher.config import config
 from autopublisher.utils.telegram import owner_only
@@ -23,7 +26,7 @@ log = logging.getLogger(__name__)
 
 try:
     import magic
-except ImportError:
+except ImportError as e:
     message = "\n".join([
         "Error while importing python-magic",
         "Libmagic C library installation is needed",
@@ -33,45 +36,44 @@ except ImportError:
         "OSX:",
         ">>> brew install libmagic",
     ])
-    log.error(message)
-    raise ImportError(message)
+    log.exception(message)
+    raise ImportError(message) from e
 
 
 class Image:
     def __init__(self):
-        self.name = ""
-        self.folder = ""
-        self._start_date = None
-        self._end_date = None
+        self.name: str | None = None
+        self.folder: Path | None = None
+        self._start_date: datetime.date = None
+        self._end_date: datetime.date = None
 
     @property
-    def path(self):
-        return os.path.join(self.folder, self.name)
+    def path(self) -> Path:
+        return self.folder / self.name
 
     @property
-    def start_date(self):
+    def start_date(self) -> str:
         if self._start_date:
             return self._start_date.isoformat()
 
     @property
-    def end_date(self):
+    def end_date(self) -> str:
         if self._end_date:
             return self._end_date.isoformat()
 
-    def create(self, image_file: telegram.files.file.File):
-        iso_fmt_time = datetime.now().isoformat()
+    def create(self, image_file: telegram.files.file.File) -> None:
+        tz = pytz.timezone("Europe/Moscow")
+        iso_fmt_time = datetime.now(tz=tz).isoformat()
         self.name = format_jpeg_name(f"mainpage_image_{iso_fmt_time}.jpg")
-        self.folder = os.path.join(
-            config.tmp_folder,
-            config.tmp_folder_prefix + get_salt()
-        )
-        if os.path.exists(self.folder):
+        tmp_folder_name = config.tmp_folder_prefix + get_salt()
+        self.folder = config.tmp_folder / tmp_folder_name
+        if self.folder.exists():
             shutil.rmtree(self.folder)
-        os.makedirs(self.folder)
+        self.folder.mkdir(parents=True)
         image_file.download(self.path)
-        self._start_date = date.today()
+        self._start_date = datetime.now(tz=tz).date()
 
-    def clear(self):
+    def clear(self) -> None:
         if self.folder:
             shutil.rmtree(self.folder)
         self.__init__()
@@ -80,12 +82,14 @@ class Image:
 current_image = Image()
 
 
-def get_salt(size=8):
+def get_salt(size: int = 8) -> str:
     chars = string.ascii_uppercase + string.digits
     return "".join(random.choice(chars) for _ in range(size))
 
 
-def edit_save(update, context):
+def edit_save(
+        update: telegram.update.Update, context: CallbackContext
+) -> int:
     text = update.message.text
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -116,7 +120,9 @@ def edit_save(update, context):
 
 
 @owner_only
-def image_loader(update, context):
+def image_loader(
+        update: telegram.update.Update, context: CallbackContext
+) -> int:
     user = update.message.from_user
     logging.info("User %s started the conversation.", user.first_name)
     context.bot.send_chat_action(

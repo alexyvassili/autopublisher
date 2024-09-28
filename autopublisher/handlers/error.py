@@ -1,10 +1,15 @@
 import logging
 import traceback
 
+import telegram.update
+from telegram.ext.callbackcontext import CallbackContext
+
 from autopublisher.config import TELEGRAM_API_MESSAGE_LIMIT
 
 
-def error_handler(update, context):
+def error_handler(
+        update: telegram.update.Update, context: CallbackContext,
+) -> None:
     """Log Errors caused by Updates."""
     logging.warning('Update "%s" caused error "%s"', update, context.error)
     tbc = traceback.format_exc()

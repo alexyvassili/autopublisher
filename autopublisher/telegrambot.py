@@ -7,6 +7,8 @@ import traceback
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler
 from telegram.ext import Filters
+from telegram.ext.callbackcontext import CallbackContext
+import telegram.update
 
 from autopublisher.utils.telegram import owner_only
 from autopublisher.bot.mailbot import mail_handler
@@ -21,16 +23,16 @@ TELEGRAM_API_MESSAGE_LIMIT = 4096
 
 
 @owner_only
-def start(update, context):
+def start(update: telegram.update.Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.effective_chat.id, text="Привет, хозяин!")
 
 
-def echo(update, context):
+def echo(update: telegram.update.Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
 
 
 # @owner_only
-# def dialog_bot(update, context):
+# def dialog_bot(update: telegram.update.Update, context: CallbackContext):
 #     request = apiai.ApiAI(DIALOGFLOW_API_CLIENT_TOKEN).text_request()  # Токен API к Dialogflow
 #     request.lang = "ru"  # На каком языке будет послан запрос
 #     # request.session_id = "BatlabAIBot"  # ID Сессии диалога (нужно, чтобы потом учить бота)
@@ -46,11 +48,11 @@ def echo(update, context):
 #     context.bot.send_message(chat_id=update.effective_chat.id, text=response_text)
 
 
-def any_answer(update, context):
+def any_answer(update: telegram.update.Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.effective_chat.id, text="А больше я ничего и не умею!")
 
 
-def error(update, context):
+def error(update: telegram.update.Update, context: CallbackContext):
     """Log Errors caused by Updates."""
     logging.warning('Update "%s" caused error "%s"', update, context.error)
     tbc = traceback.format_exc()
