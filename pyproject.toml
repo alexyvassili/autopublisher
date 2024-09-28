@@ -91,22 +91,81 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 line-length = 88
 target-version = "py311"
-select = [
-  "BLE",
-  "C90",
-  "E",
-  "F",
-  "G",
-  "I",
-  "ICN",
-  "ISC",
-  "PLE",
-  "Q",
-  "RUF006",
-  "RUF100",
-  "T10",
-  "T20",
-  "TID",
-  "UP",
-  "W",
+exclude = [
+    "autopublisher/handlers",
+    "autopublisher/mail",
+    "autopublisher/publish",
+    "autopublisher/services",
+    "autopublisher/telegrambot.py",
+    "autopublisher/utils",
+    "fabfile.py",
 ]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "ANN101",  # "Missing type annotation for `self` in method"
+    "ANN401",  # "Dynamically typed expressions (typing.Any) are disallowed in `value`"
+    "RUF001",  # "String contains ambiguous letter"
+    "RUF003",  # "Comment contains ambiguous letter"
+#    "C408",  # "Unnecessary `dict` call (rewrite as a literal)"
+#    "COM812",  # "Trailing comma missing"
+    "D",  # docstrings
+    "EM101",  # "Exception must not use a string literal, assign to variable first"
+#    "FIX002",  # "Line contains TO-DO, consider resolving the issue"
+#    "PLR0913",  # "Too many arguments in function definition"
+#    "S101",  # "Use of `assert` detected" - it's an anti-bug measure
+    "TD002",  # "Missing author in TO-DO"
+    "TD003",  # "Missing issue link on the line following this TO-DO"
+    "TRY003",  # "Avoid specifying long messages outside the exception class"
+#    "UP034"  # "Avoid extraneous parentheses" - I (v-solomatin@) like them as they make the code more explicit
+]
+
+# This is select from service-template
+#select = [
+#  "BLE",
+#  "C90",
+#  "E",
+#  "F",
+#  "G",
+#  "I",
+#  "ICN",
+#  "ISC",
+#  "PLE",
+#  "Q",
+#  "RUF006",
+#  "RUF100",
+#  "T10",
+#  "T20",
+#  "TID",
+#  "UP",
+#  "W",
+#]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
