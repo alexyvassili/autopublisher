@@ -1,5 +1,6 @@
 import logging
 import traceback
+from contextvars import ContextVar
 
 import telegram.update
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -12,8 +13,7 @@ from telegram.ext import (
 )
 from telegram.ext.callbackcontext import CallbackContext
 
-from autopublisher.config import TELEGRAM_API_MESSAGE_LIMIT
-from autopublisher.config import config
+from autopublisher.config import TELEGRAM_API_MESSAGE_LIMIT, config
 from autopublisher.mail import maildriver
 from autopublisher.publish import prepare, publish
 from autopublisher.utils.telegram import owner_only
@@ -24,11 +24,27 @@ SEARCH, TEXT, PUBLISH, RASPLOAD = range(4)
 # Callback data
 NEWS, RASP, CANCEL, YES, NO, EDIT = range(6)
 
-current_mail = maildriver.CurrentMail()  # Хранит состояние текущего письма
+
+CurrentMailT = ContextVar[maildriver.CurrentMail | None]
+current_mail: CurrentMailT = ContextVar("current_mail", default=None)
+
+
+def current_mail_clear() -> None:
+    mail = current_mail.get()
+    if mail:
+        mail.clear()
+    current_mail.set(None)
+
+
+def current_mail_rollback() -> None:
+    mail = current_mail.get()
+    if mail:
+        mail.rollback()
+    current_mail.set(None)
 
 
 def catch_error(
-        update: telegram.update.Update, context: CallbackContext
+        update: telegram.update.Update, context: CallbackContext,
 ) -> int:
     tbc = traceback.format_exc()
     context.bot.send_message(
@@ -38,7 +54,8 @@ def catch_error(
     if len(tbc) > TELEGRAM_API_MESSAGE_LIMIT:
         tbc = tbc[-TELEGRAM_API_MESSAGE_LIMIT:]
     context.bot.send_message(chat_id=update.effective_chat.id, text=tbc)
-    current_mail.rollback()
+    mail = current_mail.get()
+    mail.rollback()
     return ConversationHandler.END
 
 
@@ -72,13 +89,18 @@ def check_mail(
         )
         return ConversationHandler.END
 
-    current_mail.init_mail(mail_id, mail_folder, mail_metadata)
+    mail = maildriver.CurrentMail(
+        mail_id=mail_id,
+        mail_folder=mail_folder,
+        mail_metadata=mail_metadata,
+    )
+    current_mail.set(mail)
     context.bot.send_message(
         chat_id=update.effective_chat.id, text="Есть письмо",
     )
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=current_mail.about,
+        text=mail.about,
         reply_markup=reply_markup,
     )
     return SEARCH
@@ -105,13 +127,14 @@ def from_me_check_mail(
 
 
 def news(update: telegram.update.Update, context: CallbackContext) -> int:
-    if not current_mail.sentences:
-        title, news_sentences = maildriver.get_text_for_news(current_mail)
-        current_mail.title, current_mail.sentences = title, news_sentences
-    text_to_show = "<" + ">\n<".join(current_mail.sentences) + ">"
+    mail = current_mail.get()
+    if not mail.sentences:
+        title, news_sentences = maildriver.get_text_for_news(mail)
+        mail.title, mail.sentences = title, news_sentences
+    text_to_show = "<" + ">\n<".join(mail.sentences) + ">"
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"Title: {current_mail.title}",
+        text=f"Title: {mail.title}",
     )
     keyboard = [
         [InlineKeyboardButton("Yes", callback_data=str(YES)),
@@ -131,11 +154,12 @@ def news(update: telegram.update.Update, context: CallbackContext) -> int:
 def news_prepare(
         update: telegram.update.Update, context: CallbackContext,
 ) -> int:
-    current_mail.images = maildriver.get_images_for_news(current_mail)
-    if current_mail.images:
+    mail = current_mail.get()
+    mail.images = maildriver.get_images_for_news(mail)
+    if mail.images:
         imgs = "\n".join(
             f"{i+1}) {img}"
-            for i, img in enumerate(current_mail.images)
+            for i, img in enumerate(mail.images)
         )
     else:
         imgs = "Картинок нет."
@@ -170,7 +194,8 @@ def edit_save(
         line.replace("\n", " ")
         for line in text[1:-1].split(">\n<")
     ]
-    current_mail.sentences = sentences
+    mail = current_mail.get()
+    mail.sentences = sentences
     return news(update, context)
 
 
@@ -179,13 +204,14 @@ def rasp(update: telegram.update.Update, context: CallbackContext) -> int:
         chat_id=update.effective_chat.id,
         text="Подготовка...",
     )
-    rasp_images = prepare.rasp(current_mail.folder)
+    mail = current_mail.get()
+    rasp_images = prepare.rasp(mail.folder)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Публикуем расписание",
     )
     try:
-        url = publish.rasp(current_mail.folder, rasp_images)
+        url = publish.rasp(mail.folder, rasp_images)
     except Exception:
         return catch_error(update=update, context=context)
     context.bot.send_message(
@@ -193,20 +219,21 @@ def rasp(update: telegram.update.Update, context: CallbackContext) -> int:
         text="Опубликовано!",
     )
     context.bot.send_message(chat_id=update.effective_chat.id, text=url)
-    current_mail.clear()
+    current_mail_clear()
     return ConversationHandler.END
 
 
 def publish_news(
         update: telegram.update.Update, context: CallbackContext,
 ) -> int:
-    html = prepare.html_from_sentences(current_mail.sentences)
+    mail = current_mail.get()
+    html = prepare.html_from_sentences(mail.sentences)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Публикуем",
     )
     try:
-        url = publish.news(current_mail.title, html, current_mail.images)
+        url = publish.news(mail.title, html, mail.images)
     except Exception:
         return catch_error(update=update, context=context)
     context.bot.send_message(
@@ -214,12 +241,12 @@ def publish_news(
         text="Опубликовано!",
     )
     context.bot.send_message(chat_id=update.effective_chat.id, text=url)
-    current_mail.clear()
+    current_mail_clear()
     return ConversationHandler.END
 
 
 def cancel(update: telegram.update.Update, context: CallbackContext) -> int:
-    current_mail.rollback()
+    current_mail_rollback()
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Отмена",

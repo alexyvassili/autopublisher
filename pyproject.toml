@@ -94,7 +94,6 @@ line-length = 88
 target-version = "py311"
 exclude = [
     "autopublisher/handlers/imagebot.py",
-    "autopublisher/mail",
     "autopublisher/publish",
     "autopublisher/services",
     "autopublisher/telegrambot.py",
@@ -108,19 +107,21 @@ ignore = [
     "ANN101",  # "Missing type annotation for `self` in method"
     "ANN204",  # "Missing return type annotation for special method `__init__`"
     "ANN401",  # "Dynamically typed expressions (typing.Any) are disallowed in `value`"
-    "RUF001",  # "String contains ambiguous letter"
-    "RUF002",  # "Docstring contains ambiguous letter"
-    "RUF003",  # "Comment contains ambiguous letter"
+    "BLE001",  # "Do not catch blind exception: `Exception`"
 #    "C408",  # "Unnecessary `dict` call (rewrite as a literal)"
 #    "COM812",  # "Trailing comma missing"
     "D",  # docstrings
     "EM101",  # "Exception must not use a string literal, assign to variable first"
+    "EM102",  # "Exception must not use an f-string literal, assign to variable first"
+    "FIX002",  # "Line contains TO-DO, consider resolving the issue"
     "FLY002",  # "Consider f-string instead of string join"
-#    "FIX002",  # "Line contains TO-DO, consider resolving the issue"
 #    "PLR0913",  # "Too many arguments in function definition"
 #    "S101",  # "Use of `assert` detected" - it's an anti-bug measure
     "S311",  # "Standard pseudo-random generators are not suitable for cryptographic purposes"
     "RET503",  # "Missing explicit `return` at the end of function able to return non-`None` value"
+    "RUF001",  # "String contains ambiguous letter"
+    "RUF002",  # "Docstring contains ambiguous letter"
+    "RUF003",  # "Comment contains ambiguous letter"
     "TD002",  # "Missing author in TO-DO"
     "TD003",  # "Missing issue link on the line following this TO-DO"
     "TRY003",  # "Avoid specifying long messages outside the exception class"

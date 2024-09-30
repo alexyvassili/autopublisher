@@ -1,18 +1,17 @@
-import os
-import logging
-import imaplib
 import email
-from email.header import decode_header
+import imaplib
+import logging
 import mimetypes
 import shutil
+from email.header import decode_header
+from pathlib import Path
+from typing import Any
 
 from autopublisher.config import config
 
 
 # TODO: сделать MailClient
-
-
-def get_connection():
+def get_connection() -> imaplib.IMAP4_SSL:
     imap = imaplib.IMAP4_SSL(config.mail_server)
     status, response = imap.login(config.mail_login, config.mail_passwd)
     if status != "OK":
@@ -21,15 +20,20 @@ def get_connection():
     return imap
 
 
-def get_new_mails_from(connection, from_email):
-    status, new_mails_ids = connection.search(
+def get_new_mails_from(
+        connection: imaplib.IMAP4_SSL,
+        from_email: str,
+) -> list[str]:
+    status, unseen_mails = connection.search(
         None, f"(FROM {from_email} UNSEEN)",
     )
-    new_mails_ids = [uid for uid in new_mails_ids[0].split(b" ") if uid]
-    return new_mails_ids
+    new_mails_ids = [
+        uid for uid in unseen_mails[0].decode().split(" ") if uid
+    ]
+    return new_mails_ids  # noqa:RET504
 
 
-def decode_mail_field(message, field):
+def decode_mail_field(message: email.message.Message, field: str) -> str:
     try:
         data, encoding = decode_header(message[field])[0]
     except TypeError:
@@ -39,7 +43,7 @@ def decode_mail_field(message, field):
     return data
 
 
-def get_attachments_list(message):
+def get_attachments_list(message: email.message.Message) -> list[str]:
     attachments = []
     for part in message.walk():
         if part.get_content_maintype() == "multipart":
@@ -55,11 +59,12 @@ def get_attachments_list(message):
     return attachments
 
 
-def get_mail_metadata(message):
-    mail_metadata = {}
-    mail_metadata["Date"] = message["Date"]
-    mail_metadata["From"] = decode_mail_field(message, "From")
-    mail_metadata["Subject"] = decode_mail_field(message, "Subject")
+def get_mail_metadata(message: email.message.Message) -> dict[str, Any]:
+    mail_metadata = {
+        "Date": message["Date"],
+        "From": decode_mail_field(message, "From"),
+        "Subject": decode_mail_field(message, "Subject"),
+    }
     try:
         # get_payload can return list or bytes str, so
         # try with str raise AttributeError:
@@ -72,18 +77,22 @@ def get_mail_metadata(message):
     return mail_metadata
 
 
-def get_message(connection, mail_id):
+def get_message(
+        connection: imaplib.IMAP4_SSL,
+        mail_id: str,
+) -> email.message.Message:
+    # TODO: добавить retry
     response, mail_binary_data = connection.fetch(mail_id, "(RFC822)")
-    assert response == "OK"
-    message = email.message_from_bytes(mail_binary_data[0][1])
-    return message
+    if response != "OK":
+        raise ValueError(f"Response status is not OK: `{response}`")
+    return email.message_from_bytes(mail_binary_data[0][1])
 
 
-def save_email(message, mail_folder):
-    if os.path.exists(mail_folder):
+def save_email(message: email.message.Message, mail_folder: Path) -> None:
+    if mail_folder.exists():
         shutil.rmtree(mail_folder)
 
-    os.makedirs(mail_folder)
+    mail_folder.mkdir(parents=True)
 
     # The code below was copied from example
     counter = 1
@@ -105,7 +114,8 @@ def save_email(message, mail_folder):
             if encoding:
                 filename = bts.decode(encoding)
         counter += 1
-        with open(os.path.join(mail_folder, filename), "wb") as fp:
+        file_path = mail_folder / filename
+        with file_path.open("wb") as fp:
             # Сломано письмом Кошелева от 3 марта 2020
             # во вложениях неопознанный .txt (читается)
             # и неопознанный .eml (!)
@@ -117,17 +127,18 @@ def save_email(message, mail_folder):
                 fp.write(part.get_payload(decode=True))
             except TypeError:
                 logging.warning(
-                    f"Сохранение {filename} не удалось:"
-                    f"получен не строковый объект."
+                    "Сохранение %s не удалось: получен не строковый объект.",
+                    filename,
                 )
                 fp.write(b"\n")
 
 
-def mark_as_unread(connection, mail_id: bytes):
-    connection.store(mail_id, "-FLAGS", "(\Seen)")
+def mark_as_unread(connection: imaplib.IMAP4_SSL, mail_id: str) -> None:
+    connection.store(mail_id, "-FLAGS", "(\Seen)")  # noqa:W605
 
 
-def close_connection(connection):
+def close_connection(connection: imaplib.IMAP4_SSL) -> None:
+    # TODO: добавить retry
     status, response = connection.logout()
     if status != "BYE":
         raise ConnectionError(f"Error logged out email box. Status: {status}")
