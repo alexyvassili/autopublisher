@@ -159,8 +159,8 @@ def mainpage(image: "autopublisher.bot.imagebot.Image"):
     text_area = driver.find_element(By.ID, "edit-body-und-0-value")
     text = text_area.text
     jpeg_html = JPEG_TEMPLATE.format(
-        start_date=image.start_date,
-        end_date=image.end_date,
+        start_date=image.start_date_iso,
+        end_date=image.end_date_iso,
         jpeg=f"/sites/default/files/{image.name}",
     )
     html = jpeg_html + text

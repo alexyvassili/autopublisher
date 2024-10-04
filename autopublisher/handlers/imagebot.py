@@ -1,26 +1,25 @@
 import logging
-import string
 import random
 import shutil
+import string
 from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing_extensions import Self
-import pytz
+from typing import Self
 
-from telegram import ChatAction
-from telegram.ext import CommandHandler, MessageHandler, ConversationHandler
-from telegram.ext import Filters
-from telegram.ext.callbackcontext import CallbackContext
+import pytz
 import telegram.update
+from telegram import ChatAction
+from telegram.ext import CommandHandler, ConversationHandler, Filters, MessageHandler
+from telegram.ext.callbackcontext import CallbackContext
 
 from autopublisher.config import config
-from autopublisher.utils.telegram import owner_only
 from autopublisher.handlers.mailbot import TEXT, catch_error, echo
-from autopublisher.utils.file import format_img_name
-from autopublisher.utils.dateparse import add_date
 from autopublisher.publish.publish import mainpage
+from autopublisher.utils.dateparse import add_date
+from autopublisher.utils.file import format_img_name
+from autopublisher.utils.telegram import owner_only
 
 
 log = logging.getLogger(__name__)
@@ -59,7 +58,7 @@ def get_img_download_name(img_name: str) -> str:
     return f"{img_name}.download"
 
 
-def get_img_full_name(*, img_name: str, img_type: str = ""):
+def get_img_full_name(*, img_name: str, img_type: str = "") -> str:
     img_type = img_type.lower() if img_type else ""
     return f"{img_name}.{img_type}"
 
@@ -81,7 +80,7 @@ def get_possible_type_from_magic_text(magic_text: str) -> str:
     return magic_text.split(" ", 1)[0]
 
 
-def get_start_date(tz=DEFAULT_TZ) -> datetime.date:
+def get_start_date(tz: pytz.timezone = DEFAULT_TZ) -> datetime.date:
     return datetime.now(tz=tz).date()
 
 
@@ -96,7 +95,7 @@ def download_image(image_file: telegram.files.file.File) -> tuple[Path, str]:
     possible_type = get_possible_type_from_magic_text(magic_text)
     log.info("Possible type: %s", possible_type)
     image_full_name = get_img_full_name(
-        img_name=img_name, img_type=possible_type
+        img_name=img_name, img_type=possible_type,
     )
     image_path = image_tmp_folder / image_full_name
     shutil.move(image_download_path, image_path)
@@ -108,8 +107,8 @@ def download_image(image_file: telegram.files.file.File) -> tuple[Path, str]:
 class Image:
     name: str
     folder: Path
-    _start_date: datetime.date
-    _end_date: datetime.date = None
+    start_date: datetime.date
+    end_date: datetime.date = None
 
     @property
     def path(self) -> Path:
@@ -128,14 +127,14 @@ class Image:
         return get_possible_type_from_magic_text(self.magic_text)
 
     @property
-    def start_date(self) -> str:
-        if self._start_date:
-            return self._start_date.isoformat()
+    def start_date_iso(self) -> str:
+        if self.start_date:
+            return self.start_date.isoformat()
 
     @property
-    def end_date(self) -> str:
-        if self._end_date:
-            return self._end_date.isoformat()
+    def end_date_iso(self) -> str:
+        if self.end_date:
+            return self.end_date.isoformat()
 
     @classmethod
     def from_telegram_file(cls, image_file: telegram.files.file.File) -> Self:
@@ -143,7 +142,7 @@ class Image:
         return Image(
             name=image_name,
             folder=image_folder,
-            _start_date=get_start_date(),
+            start_date=get_start_date(),
         )
 
     def clear(self) -> None:
@@ -153,7 +152,7 @@ class Image:
 
 
 CurrentImageT = ContextVar[Image | None]
-current_image: CurrentImageT = ContextVar('current_image', default=None)
+current_image: CurrentImageT = ContextVar("current_image", default=None)
 
 
 def get_salt(size: int = 8) -> str:
@@ -162,7 +161,7 @@ def get_salt(size: int = 8) -> str:
 
 
 def edit_save(
-        update: telegram.update.Update, context: CallbackContext
+        update: telegram.update.Update, context: CallbackContext,
 ) -> int:
     image = current_image.get()
     text = update.message.text
@@ -171,9 +170,9 @@ def edit_save(
         text=f"Понятно, {text}",
     )
     try:
-        image._end_date = add_date(text, image._start_date)
-        if not image._end_date:
-            raise ValueError("No one regexp in text was found")
+        image.end_date = add_date(text, image.start_date)
+        if not image.end_date:
+            raise ValueError("No one regexp in text was found")  # noqa:TRY301
     except Exception as e:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -182,12 +181,12 @@ def edit_save(
         return TEXT
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"START DATE: {image.start_date}, "
-             f"END DATE: {image.end_date}",
+        text=f"START DATE: {image.start_date_iso}, "
+             f"END DATE: {image.end_date_iso}",
     )
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Загружаем..."
+        text="Загружаем...",
     )
     try:
         mainpage(image)
@@ -199,21 +198,21 @@ def edit_save(
 
 @owner_only
 def image_loader(
-        update: telegram.update.Update, context: CallbackContext
+        update: telegram.update.Update, context: CallbackContext,
 ) -> int:
     current_image.set(None)
     user = update.message.from_user
     logging.info("User %s started the conversation.", user.first_name)
     context.bot.send_chat_action(
         chat_id=update.effective_chat.id,
-        action=ChatAction.UPLOAD_DOCUMENT
+        action=ChatAction.UPLOAD_DOCUMENT,
     )
     file_id = update.message.document.file_id
     image_file = context.bot.get_file(file_id)
     image = Image.from_telegram_file(image_file)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Загружен файл: {}".format(image.magic_text)
+        text=f"Загружен файл: {image.magic_text}",
     )
     allowed_image_types = {"JPEG", "PNG"}
     if image.type not in allowed_image_types:
@@ -221,14 +220,14 @@ def image_loader(
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=f"Неподдерживаемый тип изображения. "
-                 f"Поддерживаемые типы: {allowed_types_str}. Отмена."
+                 f"Поддерживаемые типы: {allowed_types_str}. Отмена.",
         )
         return ConversationHandler.END
 
     current_image.set(image)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="До какой даты или на какой срок сохранить картинку?"
+        text="До какой даты или на какой срок сохранить картинку?",
     )
     return TEXT
 
