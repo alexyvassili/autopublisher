@@ -7,7 +7,7 @@ from typing import Any
 from autopublisher.config import config
 from autopublisher.mail import mail
 from autopublisher.publish import prepare
-from autopublisher.utils.document import (
+from autopublisher.documents.document import (
     docx2html,
     get_text_from_html,
     unrar,
@@ -26,15 +26,14 @@ class CurrentMail:
             mail_folder: Path,
             mail_metadata: dict[str, Any],
     ):
-        self.mail_id = mail_id
-        self.folder = mail_folder
-        self.metadata = mail_metadata
-        self.text = get_text_from_html(mail_metadata["Body"])
-        self.about = get_mail_about(mail_metadata, self.text)
-        self.attachments = self.metadata["Attachments"]
+        self.mail_id: str = mail_id
+        self.folder: Path = mail_folder
+        self.metadata: dict[str, Any] = mail_metadata
+        self.text: str = get_text_from_html(mail_metadata["Body"])
+        self.about: str = get_mail_about(mail_metadata, self.text)
+        self.attachments: list[str] = self.metadata["Attachments"]
         self.title: str | None = None
         self.sentences: list[str] | None = None
-        self.text_ready = None
         self.images: list[Path] | None = None
         self._prepare_attachments()
 
@@ -59,7 +58,7 @@ class CurrentMail:
     def _add_attachments_to_about(self) -> None:
         self.about += "\nUnpacked Attachments:\n"
         attach_files = [
-            f for f in os.listdir(self.folder)
+            f for f in self.folder.iterdir()
             if (self.folder / f).is_file()
         ]
         for i, att in enumerate(attach_files):
@@ -141,9 +140,7 @@ def get_text_from_docx(docx: Path) -> str:
 
 
 def get_text_for_news(mail: CurrentMail) -> tuple[str, list[str]]:
-    docxs = prepare.get_fullpath_files_for_extension(
-        mail.folder, "docx",
-    )
+    docxs = prepare.get_files_for_extension(mail.folder, ".docx")
     if not docxs:
         text = prepare.get_text_from_mail_body(mail.metadata)
     elif len(docxs) > 1:
@@ -173,15 +170,13 @@ def get_text_for_news(mail: CurrentMail) -> tuple[str, list[str]]:
 
 
 def get_images_for_news(mail: CurrentMail) -> list[Path]:
-    jpegs = (prepare.get_files_for_extension(mail.folder, "jpg") +
-             prepare.get_files_for_extension(mail.folder, "jpeg"))
+    jpegs = prepare.get_files_for_extension(mail.folder, ".jpg") + \
+            prepare.get_files_for_extension(mail.folder, ".jpeg")
     if not jpegs:
         return []
 
     jpegs_for_news = prepare.prepare_jpegs_for_news(
-        jpegs,
-        mail.folder,
-        # TODO: переделать всё на pathlib
-        mail.folder / prepare.IMG_FOR_NEWS_FOLDER,
+        jpegs=jpegs,
+        jpegs_folder=mail.folder / prepare.IMG_FOR_NEWS_FOLDER,
     )
     return jpegs_for_news  # noqa:RET504

@@ -24,6 +24,9 @@ OLD_FONT = "Izhitsa"
 NEW_FONT = "Times New Roman"
 
 
+HtmlT = str
+
+
 class cd:
     """Context manager for changing the current working directory"""
     def __init__(self, newPath: Path):
@@ -60,18 +63,20 @@ def unzip_without_structure(zip_name, folder):
                 shutil.copyfileobj(source, target)
 
 
-def unpack_docx(docx, folder):
-    if os.path.exists(folder):
+def unpack_docx(docx: Path, folder: Path) -> None:
+    if folder.exists():
         raise ValueError(f"Folder {folder} is already exists")
 
-    os.mkdir(folder)
+    folder.mkdir(parents=True)
     zip_ref = zipfile.ZipFile(docx, "r")
     zip_ref.extractall(folder)
     zip_ref.close()
 
 
-def replace_font_in_docx_xml(xml_name, old_font, new_font):
-    with open(xml_name) as f:
+def replace_font_in_docx_xml(
+        xml_name: Path, old_font: str, new_font: str
+) -> None:
+    with xml_name.open() as f:
         xml_string = f.read()
 
     if old_font not in xml_string:
@@ -79,7 +84,7 @@ def replace_font_in_docx_xml(xml_name, old_font, new_font):
 
     xml_string = xml_string.replace(old_font, new_font)
 
-    with open(xml_name, "w") as f:
+    with xml_name.open("w") as f:
         f.write(xml_string)
 
 
@@ -106,7 +111,7 @@ def add_cant_split_to_tr(tr: ElementTree.Element,  NS, NS_PREFIX):
         trpr.append(newCantSplit)
 
 
-def disable_table_split_in_docx_xml(xml_name):
+def disable_table_split_in_docx_xml(xml_name: Path) -> None:
     tree = ElementTree.parse(xml_name)
     root = tree.getroot()
 
@@ -120,10 +125,10 @@ def disable_table_split_in_docx_xml(xml_name):
     tree.write(xml_name)
 
 
-def pack_docx(docx_name, folder_from):
-    if not os.path.exists(folder_from):
+def pack_docx(docx_name: Path, folder_from: Path):
+    if not folder_from.exists():
         raise ValueError(f"Can't found docx folder: {folder_from}")
-    if os.path.exists(docx_name):
+    if docx_name.exists():
         raise ValueError(f"Docx file is already exists: {docx_name}")
 
     zipf = zipfile.ZipFile(docx_name, "w", zipfile.ZIP_DEFLATED)
@@ -136,17 +141,15 @@ def pack_docx(docx_name, folder_from):
     zipf.close()
 
 
-def format_rasp_docx(docx, mail_folder):
-    unpack_docx(
-        os.path.join(mail_folder, docx),
-        os.path.join(mail_folder, WORD_TMP_DIR),
-    )
-    xml_full_name = os.path.join(mail_folder, XML_NAME)
-    formatted_filename = os.path.join(mail_folder, FORMATTED_FILE)
+def format_rasp_docx(docx: Path, mail_folder: Path) -> Path:
+    word_tmp_dir = mail_folder / WORD_TMP_DIR
+    unpack_docx(docx, word_tmp_dir)
+    xml_full_name = mail_folder / XML_NAME
+    formatted_filename = mail_folder / FORMATTED_FILE
     replace_font_in_docx_xml(xml_full_name, OLD_FONT, NEW_FONT)
     disable_table_split_in_docx_xml(xml_full_name)
-    pack_docx(formatted_filename, os.path.join(mail_folder, WORD_TMP_DIR))
-    shutil.rmtree(os.path.join(mail_folder, WORD_TMP_DIR))
+    pack_docx(formatted_filename, word_tmp_dir)
+    shutil.rmtree(word_tmp_dir)
     return formatted_filename
 
 
@@ -164,7 +167,9 @@ def get_resized_image_size(width, height, wide_side):
     return int(width/coef), int(height/coef)
 
 
-def resize_jpeg_on_wide_size(jpeg, new_jpeg, wide_side_size):
+def resize_jpeg_on_wide_size(
+        jpeg: Path, new_jpeg: Path, wide_side_size: int
+) -> None:
     """Ресайз картинки с определенным размером по широкой стороне.
     Пример bash-команды для аналогичной задачи:
     `for jpeg in *.jpg; do convert $jpeg -resize 1024 -quality 100 \
@@ -177,15 +182,15 @@ def resize_jpeg_on_wide_size(jpeg, new_jpeg, wide_side_size):
 
     call([
         IMAGEMAGICK_PATH,
-        jpeg,
+        str(jpeg),
         "-resize", str(m_width),
         "-quality", "100",
-        new_jpeg,
+        str(new_jpeg),
     ])
 
 
-def docx2html(docx):
-    with open(docx, "rb") as docx_file:
+def docx2html(docx: Path) -> tuple[HtmlT, list[str]]:
+    with docx.open("rb") as docx_file:
         result = mammoth.convert_to_html(docx_file)
         # The generated HTML
         html = result.value
@@ -194,7 +199,7 @@ def docx2html(docx):
     return html, messages
 
 
-def get_lines_from_html(html):
+def get_lines_from_html(html: HtmlT) -> list[str]:
     h = html2text.HTML2Text()
     h.ignore_links = True
     h.bypass_tables = True
@@ -211,7 +216,7 @@ def get_lines_from_html(html):
     return lines
 
 
-def get_text_from_html(html):
+def get_text_from_html(html: HtmlT) -> str:
     lines = get_lines_from_html(html)
     return "\n".join(lines)
 

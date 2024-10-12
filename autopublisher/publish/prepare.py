@@ -1,20 +1,21 @@
 import logging
-import os
 import subprocess
 import shutil
 from bs4 import BeautifulSoup
 from datetime import datetime
 from pathlib import Path
 from razdel import sentenize
+from typing import Any
 
 from autopublisher.config import IMAGEMAGICK_PATH, SOFFICE_PATH, config
-from autopublisher.utils.document import (
-    format_rasp_docx, cd, resize_jpeg_on_wide_size,
+from autopublisher.documents.image import Image
+from autopublisher.documents.document import (
+    HtmlT, format_rasp_docx, cd, resize_jpeg_on_wide_size,
     docx2html, get_lines_from_html
 )
 from autopublisher.utils.file import (
     format_img_name, get_file_size_mb,
-    get_files_for_extension, get_fullpath_files_for_extension
+    get_files_for_extension
 )
 
 
@@ -31,50 +32,50 @@ class PrepareError(Exception):
     pass
 
 
-def check_rasp_folder(folder: Path):
-    docxs = [item for item in os.listdir(folder) if item.endswith("docx")]
+def check_rasp_folder(folder: Path) -> None:
+    log.info("Check folder %s", folder)
+    docxs = [item for item in folder.iterdir() if item.suffix == ".docx"]
     if not docxs:
         raise PrepareError("Can't find word file in mail")
     elif len(docxs) > 1:
         raise PrepareError("Too many word files in mail")
 
-    images = get_files_for_extension(folder, "jpg")
-    images += get_files_for_extension(folder, "png")
+    images = []
+    for ext in (".jpg", ".png"):
+        images += get_files_for_extension(folder, ext)
 
     if images:
         raise PrepareError("Jpeg or png in rasp mail found!")
 
 
-def rasp(mail_folder: Path):
-    RASP_NAME = "rasp_" + datetime.today().strftime("%Y-%m-%d-%H-%M-%S")
-    IMAGE_NAME = os.path.join(
-        mail_folder,
-        RASP_NAME + "." + config.rasp_image_format,
-    )
+def rasp(mail_folder: Path) -> list[Path]:
+    rasp_img_name = "rasp_" + datetime.today().strftime("%Y-%m-%d-%H-%M-%S")
+    rasp_img_name = f"{rasp_img_name}.{config.rasp_image_format}"
+    rasp_img_path = mail_folder / rasp_img_name
 
     # rasp folder must contain only one .docx and no jpegs
     check_rasp_folder(mail_folder)
 
-    docxs = get_files_for_extension(mail_folder, "docx")
+    docxs = get_files_for_extension(mail_folder, ".docx")
     docx_name = docxs[0]
-    formatted_docx_name = format_rasp_docx(docx_name, mail_folder)
+    formatted_docx = format_rasp_docx(docx_name, mail_folder)
 
-    if not os.path.exists(formatted_docx_name):
-        raise PrepareError(f"Can't find formatted docx: {formatted_docx_name}")
+    if not formatted_docx.exists():
+        raise PrepareError(f"Can't find formatted docx: {formatted_docx}")
 
     with cd(mail_folder):
         soffice_command = [
             SOFFICE_PATH,
             "--headless",
             "--convert-to", "pdf",
-            formatted_docx_name,
+            str(formatted_docx),
         ]
         log.info("RUN: %s", " ".join(soffice_command))
         subprocess.call(soffice_command)
-        PDF_NAME = formatted_docx_name.split(".")[0] + ".pdf"
-        if not os.path.exists(PDF_NAME):
+        pdf_name = mail_folder / f"{formatted_docx.stem}.pdf"
+        if not pdf_name.exists():
             raise PrepareError(
-                f"Can't find formatted pdf: {formatted_docx_name}"
+                f"Can't find formatted pdf: {formatted_docx}"
             )
 
         # previous version of this command:
@@ -84,12 +85,12 @@ def rasp(mail_folder: Path):
             "-verbose",
             "-density", "150",
             # add "-trim", to remove page fields
-            PDF_NAME,
+            str(pdf_name),
             "-quality", "100",
             "-alpha", "remove",
             # add "-sharpen", "0x1.0", to more image sharpness
             "-colorspace", "sRGB",
-            IMAGE_NAME,
+            str(rasp_img_path),
         ]
         log.info("RUN: %s", " ".join(imagemagick_command))
         subprocess.call(imagemagick_command)
@@ -97,7 +98,7 @@ def rasp(mail_folder: Path):
         mail_folder, config.rasp_image_format
     )
     rasp_images.sort()
-    log.info("Rasp images: %s", ", ".join(rasp_images))
+    log.info("Rasp images: %s", ", ".join(map(str, rasp_images)))
 
     if not rasp_images:
         raise PrepareError("Can't find rasp images")
@@ -105,40 +106,42 @@ def rasp(mail_folder: Path):
     return rasp_images
 
 
-def prepare_jpegs_for_news(jpegs, folder, jpegs_folder):
+def prepare_jpegs_for_news(
+        *, jpegs: list[Path], jpegs_folder: Path
+) -> list[Path]:
     """jpegs: full-path jpegs"""
     jpegs_for_news = []
-    os.mkdir(jpegs_folder)
-    formatted_names_jpegs = {jpeg: format_img_name(jpeg) for jpeg in jpegs}
+    jpegs_folder.mkdir(parents=True)
+    formatted_names_jpegs = {
+        jpeg: format_img_name(jpeg.name) for jpeg in jpegs
+    }
     for jpeg in jpegs:
-        jpeg_fullname = os.path.join(folder, jpeg)
-        size = get_file_size_mb(jpeg_fullname)
-        new_jpeg = formatted_names_jpegs[jpeg]
-        new_jpeg_fullname = os.path.join(jpegs_folder, new_jpeg)
+        size = get_file_size_mb(jpeg)
+        new_jpeg = jpegs_folder / formatted_names_jpegs[jpeg]
         if size > 1.5:
             resize_jpeg_on_wide_size(
-                jpeg_fullname, new_jpeg_fullname, WIDE_SIDE_IMAGE
+                jpeg, new_jpeg, WIDE_SIDE_IMAGE
             )
         else:
-            shutil.copyfile(jpeg_fullname, new_jpeg_fullname)
-        jpegs_for_news.append(new_jpeg_fullname)
+            shutil.copyfile(jpeg, new_jpeg)
+        jpegs_for_news.append(new_jpeg)
     return jpegs_for_news
 
 
-def prepare_mainpage_jpeg(image: "imagebot: Image"):
+def prepare_mainpage_jpeg(image: Image):
+    # TODO: Unused function
     size = get_file_size_mb(image.path)
 
     if size > 1:
         logging.info("Mainpage image size is greater then 1 MB, resizing...")
-        tmp_image_path = os.path.join(image.folder, "resized.jpg")
+        tmp_image_path = image.folder / "resized.jpg"
         resize_jpeg_on_wide_size(image.path, tmp_image_path, WIDE_SIDE_IMAGE)
         shutil.move(tmp_image_path, image.path)
 
 
-def prepare_html_for_news(mail_folder: Path):
-    docxs = get_fullpath_files_for_extension(mail_folder, "docx")
+def prepare_html_for_news(mail_folder: Path) -> tuple[str, HtmlT]:
+    docxs = get_files_for_extension(mail_folder, ".docx")
     if not docxs:
-        # title, html = get_html_news_from_mail_body(mail_metadata["Body"])
         raise PrepareError("Can't search news text in mail body")
     elif len(docxs) > 1:
         raise PrepareError("Found many docx for one news")
@@ -148,7 +151,7 @@ def prepare_html_for_news(mail_folder: Path):
     return title, html
 
 
-def prepare_text(text):
+def prepare_text(text: str) -> tuple[str, list[str]]:
     try:
         title, news_text = text.split("\n", 1)
     except ValueError:
@@ -162,31 +165,31 @@ def prepare_text(text):
     return title, sentences
 
 
-def html_from_sentences(sentences):
+def html_from_sentences(sentences: list[str]) -> HtmlT:
     paragraphs = []
     for line in sentences:
         paragraphs.append(f"{HTML_P_START}{line}{HTML_P_END}")
     return "\n".join(paragraphs)
 
 
-def get_html_news_from_docx(docx):
+def get_html_news_from_docx(docx: Path) -> tuple[str, HtmlT]:
     html, messages = docx2html(docx)
     soup = BeautifulSoup(html, "html.parser")
     paragraphs = []
     title = None
     for p in soup.find_all("p"):
-        string = str(p)
+        string_p = str(p)
         if not title:
             title = p.text
             continue
-        string = string.replace("<p>", HTML_P_START)
-        string = string.replace("</p>", HTML_P_END)
-        paragraphs.append(string)
+        string_p = string_p.replace("<p>", HTML_P_START)
+        string_p = string_p.replace("</p>", HTML_P_END)
+        paragraphs.append(string_p)
     news_html = "\n".join(paragraphs)
     return title, news_html
 
 
-def find_body_lines_in_fwd_mail(lines):
+def find_body_lines_in_fwd_mail(lines: list[str]) -> list[str]:
     message_body_flag = False
     body_lines = []
     for line in lines:
@@ -199,7 +202,7 @@ def find_body_lines_in_fwd_mail(lines):
     return body_lines
 
 
-def get_news_text_from_fwd_mail(html):
+def get_news_text_from_fwd_mail(html: HtmlT) -> str:
     lines = get_lines_from_html(html)
     body_lines = find_body_lines_in_fwd_mail(lines)
     text = "\n".join(body_lines)
@@ -208,24 +211,8 @@ def get_news_text_from_fwd_mail(html):
     return text
 
 
-def get_text_from_mail_body(metadata):
+def get_text_from_mail_body(metadata: dict[str, Any]) -> str:
     if "fwd" not in metadata["Subject"].lower():
         raise ValueError("Can't find text in non-forwarded messages")
 
     return get_news_text_from_fwd_mail(metadata["Body"])
-
-
-def news(mail_folder: Path):
-    jpegs = get_files_for_extension(mail_folder, "jpg") or \
-            get_files_for_extension(mail_folder, "jpeg")
-    if not jpegs:
-        raise PrepareError("Can't publish news without images")
-
-    jpegs_for_news = prepare_jpegs_for_news(
-        jpegs,
-        mail_folder,
-        os.path.join(mail_folder, IMG_FOR_NEWS_FOLDER),
-    )
-
-    title, html = prepare_html_for_news(mail_folder)
-    return title, html, jpegs_for_news

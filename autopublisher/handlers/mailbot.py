@@ -19,6 +19,9 @@ from autopublisher.publish import prepare, publish
 from autopublisher.utils.telegram import owner_only
 
 
+log = logging.getLogger(__name__)
+
+
 # Stages
 SEARCH, TEXT, PUBLISH, RASPLOAD = range(4)
 # Callback data
@@ -44,8 +47,11 @@ def current_mail_rollback() -> None:
 
 
 def catch_error(
-        update: telegram.update.Update, context: CallbackContext,
+        update: telegram.update.Update,
+        context: CallbackContext,
+        exc: Exception
 ) -> int:
+    log.exception(exc)
     tbc = traceback.format_exc()
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -55,7 +61,8 @@ def catch_error(
         tbc = tbc[-TELEGRAM_API_MESSAGE_LIMIT:]
     context.bot.send_message(chat_id=update.effective_chat.id, text=tbc)
     mail = current_mail.get()
-    mail.rollback()
+    if mail:
+        mail.rollback()
     return ConversationHandler.END
 
 
@@ -211,9 +218,9 @@ def rasp(update: telegram.update.Update, context: CallbackContext) -> int:
         text="Публикуем расписание",
     )
     try:
-        url = publish.rasp(mail.folder, rasp_images)
-    except Exception:
-        return catch_error(update=update, context=context)
+        url = publish.rasp(rasp_images)
+    except Exception as e:
+        return catch_error(update=update, context=context, exc=e)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Опубликовано!",
@@ -234,8 +241,8 @@ def publish_news(
     )
     try:
         url = publish.news(mail.title, html, mail.images)
-    except Exception:
-        return catch_error(update=update, context=context)
+    except Exception as e:
+        return catch_error(update=update, context=context, exc=e)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Опубликовано!",
