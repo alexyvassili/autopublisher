@@ -6,8 +6,8 @@ from telegram import ChatAction
 from telegram.ext import CommandHandler, ConversationHandler, Filters, MessageHandler
 from telegram.ext.callbackcontext import CallbackContext
 
-from autopublisher.handlers.mailbot import TEXT, catch_error, echo
 from autopublisher.documents.image import Image
+from autopublisher.handlers.mailbot import TEXT, catch_error, echo
 from autopublisher.publish.publish import mainpage
 from autopublisher.utils.dateparse import add_date
 from autopublisher.utils.telegram import owner_only

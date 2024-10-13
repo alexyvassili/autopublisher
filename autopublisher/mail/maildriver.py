@@ -1,18 +1,17 @@
 import logging
-import os
 import shutil
 from pathlib import Path
 from typing import Any
 
 from autopublisher.config import config
-from autopublisher.mail import mail
-from autopublisher.publish import prepare
 from autopublisher.documents.document import (
     docx2html,
     get_text_from_html,
     unrar,
     unzip_without_structure,
 )
+from autopublisher.mail import mail
+from autopublisher.publish import prepare
 from autopublisher.utils.spelling import spell_line
 
 

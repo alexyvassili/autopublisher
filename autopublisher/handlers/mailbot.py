@@ -49,7 +49,7 @@ def current_mail_rollback() -> None:
 def catch_error(
         update: telegram.update.Update,
         context: CallbackContext,
-        exc: Exception
+        exc: Exception,
 ) -> int:
     log.exception(exc)
     tbc = traceback.format_exc()

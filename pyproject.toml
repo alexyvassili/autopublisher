@@ -93,7 +93,7 @@ build-backend = "poetry.core.masonry.api"
 line-length = 88
 target-version = "py311"
 exclude = [
-#    "autopublisher/publish",
+    "autopublisher/publish",
     "autopublisher/services",
     "autopublisher/telegrambot.py",
     "autopublisher/utils",
@@ -116,12 +116,13 @@ ignore = [
     "FIX002",  # "Line contains TO-DO, consider resolving the issue"
     "FLY002",  # "Consider f-string instead of string join"
 #    "PLR0913",  # "Too many arguments in function definition"
-#    "S101",  # "Use of `assert` detected" - it's an anti-bug measure
-    "S311",  # "Standard pseudo-random generators are not suitable for cryptographic purposes"
     "RET503",  # "Missing explicit `return` at the end of function able to return non-`None` value"
     "RUF001",  # "String contains ambiguous letter"
     "RUF002",  # "Docstring contains ambiguous letter"
     "RUF003",  # "Comment contains ambiguous letter"
+#    "S101",  # "Use of `assert` detected" - it's an anti-bug measure
+    "S311",  # "Standard pseudo-random generators are not suitable for cryptographic purposes"
+    "S314",  # "Using `xml` to parse untrusted data is known to be vulnerable to XML attacks; use `defusedxml` equivalents"
     "TD002",  # "Missing author in TO-DO"
     "TD003",  # "Missing issue link on the line following this TO-DO"
     "TRY003",  # "Avoid specifying long messages outside the exception class"
