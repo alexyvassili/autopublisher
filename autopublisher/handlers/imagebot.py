@@ -1,100 +1,38 @@
 import logging
-import os
-import string
-import random
-import shutil
-from datetime import datetime, date
+from contextvars import ContextVar
 
-import telegram
+import telegram.update
 from telegram import ChatAction
-from telegram.ext import CommandHandler, MessageHandler, ConversationHandler
-from telegram.ext import Filters
+from telegram.ext import CommandHandler, ConversationHandler, Filters, MessageHandler
+from telegram.ext.callbackcontext import CallbackContext
 
-from autopublisher.config import config
-from autopublisher.utils.telegram import owner_only
-from autopublisher.handlers.mailbot import TEXT, echo
-from autopublisher.utils.file import format_jpeg_name
-from autopublisher.utils.dateparse import add_date
+from autopublisher.documents.image import Image
+from autopublisher.handlers.mailbot import TEXT, catch_error, echo
 from autopublisher.publish.publish import mainpage
+from autopublisher.utils.dateparse import add_date
+from autopublisher.utils.telegram import owner_only
 
 
 log = logging.getLogger(__name__)
 
 
-try:
-    import magic
-except ImportError:
-    message = '\n'.join([
-        "Error while importing python-magic",
-        "Libmagic C library installation is needed",
-        "Debian/Ubuntu:",
-        ">>> apt-get install libmagic1",
-        "\n",
-        "OSX:",
-        ">>> brew install libmagic",
-    ])
-    log.error(message)
-    raise ImportError(message)
+CurrentImageT = ContextVar[Image | None]
+current_image: CurrentImageT = ContextVar("current_image", default=None)
 
 
-class Image:
-    def __init__(self):
-        self.name = ""
-        self.folder = ""
-        self._start_date = None
-        self._end_date = None
-
-    @property
-    def path(self):
-        return os.path.join(self.folder, self.name)
-
-    @property
-    def start_date(self):
-        if self._start_date:
-            return self._start_date.isoformat()
-
-    @property
-    def end_date(self):
-        if self._end_date:
-            return self._end_date.isoformat()
-
-    def create(self, image_file: telegram.files.file.File):
-        iso_fmt_time = datetime.now().isoformat()
-        self.name = format_jpeg_name(f'mainpage_image_{iso_fmt_time}.jpg')
-        self.folder = os.path.join(
-            config.tmp_folder,
-            config.tmp_folder_prefix + get_salt()
-        )
-        if os.path.exists(self.folder):
-            shutil.rmtree(self.folder)
-        os.makedirs(self.folder)
-        image_file.download(self.path)
-        self._start_date = date.today()
-
-    def clear(self):
-        if self.folder:
-            shutil.rmtree(self.folder)
-        self.__init__()
-
-
-current_image = Image()
-
-
-def get_salt(size=8):
-    chars = string.ascii_uppercase + string.digits
-    return ''.join(random.choice(chars) for _ in range(size))
-
-
-def edit_save(update, context):
+def edit_save(
+        update: telegram.update.Update, context: CallbackContext,
+) -> int:
+    image = current_image.get()
     text = update.message.text
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f'Понятно, {text}',
+        text=f"Понятно, {text}",
     )
     try:
-        current_image._end_date = add_date(text, current_image._start_date)
-        if not current_image._end_date:
-            raise ValueError("No one regexp in text was found")
+        image.end_date = add_date(text, image.start_date)
+        if not image.end_date:
+            raise ValueError("No one regexp in text was found")  # noqa:TRY301
     except Exception as e:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -103,46 +41,53 @@ def edit_save(update, context):
         return TEXT
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"START DATE: {current_image.start_date}, "
-             f"END DATE: {current_image.end_date}",
+        text=f"START DATE: {image.start_date_iso}, "
+             f"END DATE: {image.end_date_iso}",
     )
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Загружаем..."
+        text="Загружаем...",
     )
-    mainpage(current_image)
+    try:
+        mainpage(image)
+    except Exception as e:
+        return catch_error(update=update, context=context, exc=e)
     context.bot.send_message(chat_id=update.effective_chat.id, text="Готово!")
     return ConversationHandler.END
 
 
 @owner_only
-def image_loader(update, context):
+def image_loader(
+        update: telegram.update.Update, context: CallbackContext,
+) -> int:
+    current_image.set(None)
     user = update.message.from_user
     logging.info("User %s started the conversation.", user.first_name)
     context.bot.send_chat_action(
         chat_id=update.effective_chat.id,
-        action=ChatAction.UPLOAD_DOCUMENT
+        action=ChatAction.UPLOAD_DOCUMENT,
     )
     file_id = update.message.document.file_id
-    newFile = context.bot.get_file(file_id)
-    current_image.clear()
-    current_image.create(newFile)
-    text = magic.from_file(current_image.path)
-    logging.info("Loaded image to: %s", current_image.path)
+    image_file = context.bot.get_file(file_id)
+    image = Image.from_telegram_file(image_file)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text='Загружен файл: {}'.format(text)
+        text=f"Загружен файл: {image.magic_text}",
     )
-    if not text.startswith('JPEG'):
+    allowed_image_types = {"JPEG", "PNG"}
+    if image.type not in allowed_image_types:
+        allowed_types_str = ", ".join(allowed_image_types)
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text='Это не JPEG файл. Отмена.'
+            text=f"Неподдерживаемый тип изображения. "
+                 f"Поддерживаемые типы: {allowed_types_str}. Отмена.",
         )
-        current_image.clear()
         return ConversationHandler.END
+
+    current_image.set(image)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text='До какой даты или на какой срок сохранить картинку?'
+        text="До какой даты или на какой срок сохранить картинку?",
     )
     return TEXT
 
@@ -152,5 +97,5 @@ image_handler = ConversationHandler(
     states={
         TEXT: [MessageHandler(Filters.text, edit_save)],
     },
-    fallbacks=[CommandHandler('echo', echo)],
+    fallbacks=[CommandHandler("echo", echo)],
 )

@@ -1,6 +1,7 @@
 import platform
-
 from dataclasses import dataclass
+from pathlib import Path
+
 from yarl import URL
 
 
@@ -19,7 +20,7 @@ else:
 TELEGRAM_API_MESSAGE_LIMIT = 4096
 
 # ##### BOT SETTINGS ##### #
-TMP_FOLDER = "/tmp"
+TMP_FOLDER = Path("/tmp")  # noqa:S108
 TMP_FOLDER_PREFIX = "autopublisher_"
 
 # ##### SITE SETTINGS ##### #
@@ -50,7 +51,7 @@ class Config:
     web_driver_wait: int = 20
 
     @property
-    def tmp_folder(self) -> str:
+    def tmp_folder(self) -> Path:
         return TMP_FOLDER
 
     @property

@@ -1,0 +1,57 @@
+line-length = 88
+target-version = "py311"
+exclude = [
+    "autopublisher/telegrambot.py",
+]
+
+[lint]
+select = ["ALL"]
+ignore = [
+    "ANN101",  # "Missing type annotation for `self` in method"
+    "ANN102",  # "Missing type annotation for `cls` in classmethod"
+    "ANN204",  # "Missing return type annotation for special method `__init__`"
+    "ANN401",  # "Dynamically typed expressions (typing.Any) are disallowed in `value`"
+    "BLE001",  # "Do not catch blind exception: `Exception`"
+    "D",  # docstrings
+    "EM101",  # "Exception must not use a string literal, assign to variable first"
+    "EM102",  # "Exception must not use an f-string literal, assign to variable first"
+    "FIX002",  # "Line contains TO-DO, consider resolving the issue"
+    "FLY002",  # "Consider f-string instead of string join"
+    "RET502",  # "Do not implicitly `return None` in function able to return non-`None` value"
+    "RET503",  # "Missing explicit `return` at the end of function able to return non-`None` value"
+    "RUF001",  # "String contains ambiguous letter"
+    "RUF002",  # "Docstring contains ambiguous letter"
+    "RUF003",  # "Comment contains ambiguous letter"
+    "S311",  # "Standard pseudo-random generators are not suitable for cryptographic purposes"
+    "S314",  # "Using `xml` to parse untrusted data is known to be vulnerable to XML attacks; use `defusedxml` equivalents"
+    "TD002",  # "Missing author in TO-DO"
+    "TD003",  # "Missing issue link on the line following this TO-DO"
+    "TRY003",  # "Avoid specifying long messages outside the exception class"
+]
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.flake8-quotes]
+inline-quotes = "double"
+
+[lint.isort]
+lines-after-imports = 2
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"

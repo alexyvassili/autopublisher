@@ -34,10 +34,11 @@ Pillow = "~10.2"
 python-dateutil = "~2.8"
 python-magic = "~0.4.27"
 python-telegram-bot = "12.8"
+pytz = "^2024"
 PyVirtualDisplay = "3.0"
 razdel = "~0.5"
 requests = "~2.31"
-selenium = "~=4.9.0"
+selenium = "~=4.9"
 setproctitle = "^1.3"
 yarl = "~=1.9"
 
@@ -87,26 +88,3 @@ source = ["autopublisher"]
 [build-system]
 requires = ["poetry-core>=1.8.1"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.ruff]
-line-length = 88
-target-version = "py311"
-select = [
-  "BLE",
-  "C90",
-  "E",
-  "F",
-  "G",
-  "I",
-  "ICN",
-  "ISC",
-  "PLE",
-  "Q",
-  "RUF006",
-  "RUF100",
-  "T10",
-  "T20",
-  "TID",
-  "UP",
-  "W",
-]
