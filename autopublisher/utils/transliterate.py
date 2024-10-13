@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-
 import re
+
 
 capital_letters = {"А": "A",
                    "Б": "B",
@@ -27,7 +26,7 @@ capital_letters = {"А": "A",
                    "Ъ": "",
                    "Ы": "Y",
                    "Ь": "",
-                   "Э": "E", }
+                   "Э": "E" }
 
 capital_letters_transliterated_to_multiple_letters = {"Ж": "Zh",
                                                       "Ц": "Ts",
@@ -35,7 +34,7 @@ capital_letters_transliterated_to_multiple_letters = {"Ж": "Zh",
                                                       "Ш": "Sh",
                                                       "Щ": "Sch",
                                                       "Ю": "Yu",
-                                                      "Я": "Ya", }
+                                                      "Я": "Ya" }
 
 lower_case_letters = {"а": "a",
                       "б": "b",
@@ -69,10 +68,10 @@ lower_case_letters = {"а": "a",
                       "ь": "",
                       "э": "e",
                       "ю": "yu",
-                      "я": "ya", }
+                      "я": "ya" }
 
 
-def transliterate(string):
+def transliterate(string: str) -> str:
     for cyrillic_string, latin_string in \
             capital_letters_transliterated_to_multiple_letters.items():
         string = re.sub(
@@ -97,6 +96,5 @@ def transliterate(string):
     return string
 
 
-def replace_non_alphabetic_symbols(string):
-    string = re.sub(r"[^0-9A-z.]", "_", string)
-    return string
+def replace_non_alphabetic_symbols(string: str) -> str:
+    return re.sub(r"[^0-9A-z.]", "_", string)

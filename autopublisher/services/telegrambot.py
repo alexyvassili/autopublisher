@@ -1,19 +1,21 @@
 import logging
+from dataclasses import dataclass
+from typing import Any
 
 from telegram.ext import Updater
 from yarl import URL
 
-from autopublisher.handlers.mailbot import mail_handler
-from autopublisher.handlers.imagebot import image_handler
-from autopublisher.handlers.start import start_handler
-from autopublisher.handlers.echo import echo_handler
 from autopublisher.handlers.any_handler import any_handler
+from autopublisher.handlers.echo import echo_handler
 from autopublisher.handlers.error import error_handler
+from autopublisher.handlers.imagebot import image_handler
+from autopublisher.handlers.mailbot import mail_handler
+from autopublisher.handlers.start import start_handler
 
 
 log = logging.getLogger(__name__)
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
 
@@ -22,10 +24,35 @@ HANDLERS = [
     mail_handler,
     image_handler,
     echo_handler,
-    any_handler
+    any_handler,
 ]
 
 ERROR_HANDLERS = [error_handler]
+
+
+@dataclass(frozen=True)
+class Proxy:
+    url: URL | None
+    port: int | None
+    username: str | None
+    passwd: str | None
+
+    @property
+    def full_url(self) -> URL | None:
+        if self.url and self.port:
+            return self.url.with_port(self.port)
+        return self.url
+
+    def to_kwargs(self) -> dict[str, Any]:
+        proxy_args = dict()  # noqa:C408
+        if self.full_url:
+            proxy_args["proxy_url"] = self.full_url
+        if self.username and self.passwd:
+            proxy_args["urllib3_proxy_kwargs"] = {
+                "username": self.username,
+                "password": self.passwd,
+            }
+        return proxy_args
 
 
 class TelegramBot:
@@ -33,44 +60,25 @@ class TelegramBot:
     def __init__(
         self, *,
         token: str,
-        proxy_url: URL | None = None,
-        proxy_port: int | None = None,
-        proxy_username: str | None = None,
-        proxy_passwd: str | None = None
+        proxy: Proxy,
     ):
         from autopublisher.config import config
         log.info("SERVER MODE %s", config.server_mode)
         self.token = token
-        self.proxy_url = proxy_url
-        if self.proxy_url and proxy_port:
-            self.proxy_url = self.proxy_url.with_port(proxy_port)
-        self.proxy_username = proxy_username
-        self.proxy_passwd = proxy_passwd
+        self.proxy = proxy
 
-    @property
-    def proxy_kwargs(self):
-        proxy_args = dict()
-        if self.proxy_url:
-            proxy_args["proxy_url"] = self.proxy_url
-        if self.proxy_username and self.proxy_passwd:
-            proxy_args["urllib3_proxy_kwargs"] = {
-                "username": self.proxy_username,
-                "password": self.proxy_passwd,
-            }
-        return proxy_args
-
-    def start(self):
+    def start(self) -> None:
         updater = Updater(
             token=self.token,
             use_context=True,
-            request_kwargs=self.proxy_kwargs,
+            request_kwargs=self.proxy.to_kwargs(),
         )
         dispatcher = updater.dispatcher
         for handler in HANDLERS:
             dispatcher.add_handler(handler)
 
-        for error_handler in ERROR_HANDLERS:
-            dispatcher.add_error_handler(error_handler)
+        for err_handler in ERROR_HANDLERS:
+            dispatcher.add_error_handler(err_handler)
         updater.start_polling()
 
         # Run the bot until you press Ctrl-C or the process receives SIGINT,

@@ -1,4 +1,7 @@
 # noqa
+
+"""Файл сохраняем ради функции dialog бота"""
+
 import logging
 # import json
 import traceback

@@ -1,7 +1,9 @@
 import re
-
 from datetime import date
+
 from dateutil.relativedelta import relativedelta
+
+from autopublisher.utils.dt import get_dt_now
 
 
 numbers = {
@@ -60,31 +62,31 @@ text_interval_regexp = re.compile(
     r"^({})\s+({})$".format(
         "|".join(numbers),
         "|".join(intervals),
-    )
+    ),
 )
 
 num_interval_regexp = re.compile(
     r"^(\d+)\s+({})$".format(
-        "|".join(intervals)
-    )
+        "|".join(intervals),
+    ),
 )
 
 date_regexp = re.compile(
     r"^(\d+)\s+({})$".format(
-        "|".join(months)
-    )
+        "|".join(months),
+    ),
 )
 
 date_with_year_regexp = re.compile(
     r"^(\d+)\s+({})\s+(\d+)$".format(
-        "|".join(months)
-    )
+        "|".join(months),
+    ),
 )
 
 date_with_year_word_regexp = re.compile(
     r"^(\d+)\s+({})\s+(\d+)\sгода$".format(
-        "|".join(months)
-    )
+        "|".join(months),
+    ),
 )
 
 
@@ -100,8 +102,8 @@ date_regexps = (
 )
 
 
-def add_date(text, dt=None):
-    dt = dt or date.today()
+def add_date(text: str, dt: date | None = None) -> date:
+    dt = dt or get_dt_now().date()
     text = text.strip()
 
     if text in simple_intervals:

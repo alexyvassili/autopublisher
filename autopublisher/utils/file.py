@@ -1,8 +1,8 @@
-import os
 from pathlib import Path
 
 from autopublisher.utils.transliterate import (
-    transliterate, replace_non_alphabetic_symbols
+    replace_non_alphabetic_symbols,
+    transliterate,
 )
 
 
@@ -13,13 +13,13 @@ def format_img_name(jpeg_name: str) -> str:
 
 
 def get_file_size_mb(file_name: Path) -> float | None:
-    size = os.path.getsize(file_name)
+    size = file_name.stat().st_size
     if size:
         return size / 1024 / 1024
 
 
 def get_files_for_extension(
-        folder: Path, ext: str
+        folder: Path, ext: str,
 ) -> list[Path]:
     if not ext.startswith("."):
         ext = f".{ext}"

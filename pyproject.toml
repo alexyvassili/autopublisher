@@ -93,11 +93,7 @@ build-backend = "poetry.core.masonry.api"
 line-length = 88
 target-version = "py311"
 exclude = [
-#    "autopublisher/publish",
-    "autopublisher/services",
     "autopublisher/telegrambot.py",
-    "autopublisher/utils",
-    "fabfile.py",
 ]
 
 [tool.ruff.lint]
@@ -116,6 +112,7 @@ ignore = [
     "FIX002",  # "Line contains TO-DO, consider resolving the issue"
     "FLY002",  # "Consider f-string instead of string join"
 #    "PLR0913",  # "Too many arguments in function definition"
+    "RET502",  # "Do not implicitly `return None` in function able to return non-`None` value"
     "RET503",  # "Missing explicit `return` at the end of function able to return non-`None` value"
     "RUF001",  # "String contains ambiguous letter"
     "RUF002",  # "Docstring contains ambiguous letter"

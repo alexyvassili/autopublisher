@@ -1,11 +1,13 @@
-import requests
 from typing import Any
+
+import requests
 
 
 def send_line_to_yandex(line: str) -> list[dict[str, Any]]:
     response = requests.post(
         "https://speller.yandex.net/services/spellservice.json/checkText",
         data={"text": line},
+        timeout=20,
     )
     return response.json()
 

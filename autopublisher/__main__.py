@@ -9,7 +9,7 @@ from setproctitle import setproctitle
 
 from autopublisher.arguments import parser
 from autopublisher.config import config
-from autopublisher.services.telegrambot import TelegramBot
+from autopublisher.services.telegrambot import Proxy, TelegramBot
 
 
 log = logging.getLogger(__name__)
@@ -32,13 +32,13 @@ def run_master(name: str, args: Namespace) -> None:
     log.info("Master with PID %s started", os.getpid())
     setproctitle(f"[Master] {name}")
     set_config(args)
-    service = TelegramBot(
-        token=args.telegram_bot_token,
-        proxy_url=args.telegram_bot_proxy_url,
-        proxy_port=args.telegram_bot_proxy_port,
-        proxy_username=args.telegram_bot_proxy_username,
-        proxy_passwd=args.telegram_bot_proxy_passwd,
+    proxy = Proxy(
+        url=args.telegram_bot_proxy_url,
+        port=args.telegram_bot_proxy_port,
+        username=args.telegram_bot_proxy_username,
+        passwd=args.telegram_bot_proxy_passwd,
     )
+    service = TelegramBot(token=args.telegram_bot_token, proxy=proxy)
     service.start()
 
 

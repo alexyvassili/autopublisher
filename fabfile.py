@@ -3,11 +3,11 @@ This is fabfile for install and update autopublisher on server
 Use this file through `make` command
 """
 
-import os
+from pathlib import Path
 
-from fabric.state import env
 from fabric.api import get, put, run, sudo
 from fabric.contrib.files import exists
+from fabric.state import env
 
 
 BASE_PACKAGES = [
@@ -59,20 +59,24 @@ IMAGEMAGICK_BUILD_DEPENDENCIES = [
 ]
 
 
-def set_env():
-    env.GECKODRIVER_URL = "https://github.com/mozilla/geckodriver/releases/" \
-                          "download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz"
-    env.IMAGEMAGICK_URL = "https://github.com/ImageMagick/ImageMagick/" \
-                          "archive/refs/tags/7.1.1-27.tar.gz"
+def set_env() -> None:
+    env.GECKODRIVER_URL = (
+        "https://github.com/mozilla/geckodriver/releases/"
+        "download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz"
+    )
+    env.IMAGEMAGICK_URL = (
+        "https://github.com/ImageMagick/ImageMagick/"
+        "archive/refs/tags/7.1.1-27.tar.gz"
+    )
     env.INSTALL_PATH = "/usr/local/share/autopublisher"
     env.VENV_PYTHON_PATH = f"{env.INSTALL_PATH}/bin/python3"
-    env.BUILD_DIR = "/tmp/build"
-    env.BUILD_APP_DIR = "/tmp/autopublisher"
+    env.BUILD_DIR = "/tmp/autopublisher_build"  # noqa:S108
+    env.BUILD_APP_DIR = "/tmp/autopublisher"  # noqa:S108
     env.VENV_BUILD_DIR = f"{env.BUILD_APP_DIR}/env"
     env.VENV_BUILD_PYTHON_PATH = f"{env.VENV_BUILD_DIR}/bin/python3"
 
 
-def bootstrap():
+def bootstrap() -> None:
     set_env()
     check_deb()
     check_dist()
@@ -87,7 +91,7 @@ def bootstrap():
     restart_all()
 
 
-def deploy():
+def deploy() -> None:
     set_env()
     run("uname -a")
     check_dist()
@@ -95,36 +99,36 @@ def deploy():
     restart_all()
 
 
-def check_deb():
-    if not os.path.exists("deb/imagemagick-7-full-7.1.1-27.deb"):
+def check_deb() -> None:
+    if not Path("deb/imagemagick-7-full-7.1.1-27.deb").exists():
         raise FileNotFoundError(
             "File not found: deb/imagemagick-7-full-7.1.1-27.deb"
             "Maybe you need to run `make build-magick` "
-            "to build imagemagick package"
+            "to build imagemagick package",
         )
 
 
-def check_dist():
-    if not os.path.exists("dist"):
+def check_dist() -> None:
+    if not Path("dist").exists():
         raise FileNotFoundError(
             "Directory `dist/` does not exists. "
-            "Maybe you need to run `make build` to build app"
+            "Maybe you need to run `make build` to build app",
         )
-    items = os.listdir("dist")
+    items = list(map(str, Path("dist").iterdir()))
     whls = [item for item in items if item.endswith(".whl")]
     if not whls:
         raise FileNotFoundError(
             "No .whl found in `dist/` directory. "
-            "Maybe you need to run `make build` to build app"
+            "Maybe you need to run `make build` to build app",
         )
     if "requirements.txt" not in items:
         raise FileNotFoundError(
             "File `requirements.txt` was not found in `dist/` directory. "
-            "Maybe you need to run `make build` to build app"
+            "Maybe you need to run `make build` to build app",
         )
 
 
-def setup_debian():
+def setup_debian() -> None:
     put(
         local_path="debian/config/sources.list",
         remote_path="/etc/apt/sources.list",
@@ -138,41 +142,42 @@ def setup_debian():
     sudo("aptitude install -y " + " ".join(BASE_APPS))
 
 
-def setup_build_system():
+def setup_build_system() -> None:
     setup_debian()
     sudo("aptitude install -y build-essential")
 
 
-def install_python():
+def install_python() -> None:
     sudo("aptitude install -y " + " ".join(PYTHON_PACKAGES))
 
 
-def install_system_apps():
+def install_system_apps() -> None:
     sudo("aptitude install -y " + " ".join(SYSTEM_APPS))
 
 
-def install_gecko_driver():
+def install_gecko_driver() -> None:
     run(f"wget {env.GECKODRIVER_URL} -O /tmp/geckodriver.tar.gz")
-    _mkdir("/tmp/geckodriver")
-    run("tar xvzf /tmp/geckodriver.tar.gz -C /tmp/geckodriver")
-    sudo("cp /tmp/geckodriver/geckodriver /usr/local/bin")
-    run("rm -fr /tmp/geckodriver")
+    _mkdir("/tmp/autopublisher_geckodriver")  # noqa:S108
+    run("tar xvzf /tmp/geckodriver.tar.gz -C /tmp/autopublisher_geckodriver")
+    sudo("cp /tmp/autopublisher_geckodriver/geckodriver /usr/local/bin")
+    run("rm -fr /tmp/autopublisher_geckodriver")
     run("rm /tmp/geckodriver.tar.gz")
 
 
-def install_imagemagick():
+def install_imagemagick() -> None:
     sudo("aptitude install -y " + " ".join(IMAGEMAGICK_DEPENDENCIES))
-    put(local_path="deb/imagemagick-7-full-7.1.1-27.deb", remote_path="/tmp/")
+    put(local_path="deb/imagemagick-7-full-7.1.1-27.deb", remote_path="/tmp/")  # noqa:S108
     sudo("dpkg -i /tmp/imagemagick-7-full-7.1.1-27.deb")
 
 
-def create_app_user():
+def create_app_user() -> None:
+    # переписать имя пользователя как константу
     run("id -u alexey &>/dev/null || sudo useradd -g users alexey")
-    sudo(f"mkdir -p /home/alexey")
-    sudo(f"chown alexey /home/alexey")
+    sudo("mkdir -p /home/alexey")
+    sudo("chown alexey /home/alexey")
 
 
-def install_app():
+def install_app() -> None:
     if not exists(env.VENV_PYTHON_PATH):
         sudo(f"mkdir -p {env.INSTALL_PATH}")
         sudo(f"chown alexey {env.INSTALL_PATH}")
@@ -181,9 +186,10 @@ def install_app():
             f"{env.INSTALL_PATH}/bin/pip install -U pip setuptools wheel",
             user="alexey",
         )
+    # TODO: переписать пути на константы
     run("rm -fr /tmp/dist")
-    _mkdir("/tmp/dist")
-    put(local_path="dist/*", remote_path="/tmp/dist/")
+    _mkdir("/tmp/dist")  # noqa:S108
+    put(local_path="dist/*", remote_path="/tmp/dist/")  # noqa:S108
     sudo(
         f"{env.INSTALL_PATH}/bin/pip install -r /tmp/dist/requirements.txt",
         user="alexey",
@@ -194,12 +200,12 @@ def install_app():
     )
     sudo(
         f"find {env.INSTALL_PATH}/bin/ -name 'autopublisher*' "
-        "-exec ln -snf '{}' /usr/local/bin/ ';'"
+        "-exec ln -snf '{}' /usr/local/bin/ ';'",
     )
     run("rm -fr /tmp/dist")
 
 
-def set_service():
+def set_service() -> None:
     put(
         local_path="fabdeploy/autopublisher.service",
         remote_path="/etc/systemd/system/",
@@ -208,25 +214,25 @@ def set_service():
     sudo("systemctl enable autopublisher")
 
 
-def stop_service():
+def stop_service() -> None:
     set_env()
     sudo("systemctl stop autopublisher")
 
 
-def restart_service():
+def restart_service() -> None:
     set_env()
     restart_all()
 
 
-def restart_all():
+def restart_all() -> None:
     sudo("systemctl restart autopublisher")
 
 
-def clean_build():
+def clean_build() -> None:
     run(f"rm -fr {env.BUILD_DIR}")
 
 
-def build_magick():
+def build_magick() -> None:
     set_env()
     clean_build()
     setup_build_system()
@@ -236,12 +242,12 @@ def build_magick():
     run(
         f"cd {env.BUILD_DIR} && "
         f"wget {env.IMAGEMAGICK_URL} -O ImageMagick-7.1.1-27.tar.gz && "
-        f"tar -xvzf ImageMagick-7.1.1-27.tar.gz"
+        f"tar -xvzf ImageMagick-7.1.1-27.tar.gz",
     )
     run(
         f"cd {env.BUILD_DIR}/ImageMagick-7.1.1-27 && "
         f"./configure --disable-shared --disable-installed --disable-openmp "
-        f"--prefix=\"{env.BUILD_DIR}/imagemagick-7-full-7.1.1-27/usr/local\" "
+        f'--prefix=\"{env.BUILD_DIR}/imagemagick-7-full-7.1.1-27/usr/local\" '
         f"--without-x --with-gslib --with-modules --with-bzlib -with-djvu "
         f"--with-dps --with-fontconfig --with-freetype --with-gslib "
         f"--with-gvc --with-heic --with-jbig --with-jpeg --with-jxl "
@@ -251,7 +257,7 @@ def build_magick():
         f"--with-tiff --with-webp --with-wmf --with-xml --with-zip "
         f"--with-zlib --with-zstd && "
         f"make && "
-        f"make install"
+        f"make install",
     )
     put(
         local_path="debian/imagemagick/DEBIAN",
@@ -260,18 +266,18 @@ def build_magick():
     run(f"dpkg-deb --build {env.BUILD_DIR}/imagemagick-7-full-7.1.1-27")
     get(
         remote_path=f"{env.BUILD_DIR}/imagemagick-7-full-7.1.1-27.deb",
-        local_path="deb/"
+        local_path="deb/",
     )
     clean_build()
 
 
-def load_manifest():
-    with open("MANIFEST.in") as f:
+def load_manifest() -> list[str]:
+    with Path("MANIFEST.in").open() as f:
         items = [item.strip() for item in f.readlines()]
     return [item for item in items if item]
 
 
-def _build_app():
+def _build_app() -> None:
     run(f"rm -fr {env.BUILD_APP_DIR}")
     _mkdir(env.BUILD_APP_DIR)
     for item in load_manifest():
@@ -285,25 +291,25 @@ def _build_app():
         f"poetry env info && "
         f"poetry install && "
         f"poetry build -f wheel && "
-        f"poetry export -f requirements.txt -o dist/requirements.txt"
+        f"poetry export -f requirements.txt -o dist/requirements.txt",
     )
     get(remote_path=f"{env.BUILD_APP_DIR}/dist/*", local_path="dist/")
     run(f"rm -fr {env.BUILD_APP_DIR}")
 
 
-def bootstrap_system_and_build_app():
+def bootstrap_system_and_build_app() -> None:
     set_env()
     setup_build_system()
     install_python()
     _build_app()
 
 
-def rebuild_app():
+def rebuild_app() -> None:
     set_env()
     _build_app()
 
 
-def _mkdir(path: str, use_sudo=False, chown=False):
+def _mkdir(path: str, *, use_sudo: bool = False, chown: bool = False) -> None:
     if use_sudo:
         sudo(f"mkdir -p {path}")
         if chown:
