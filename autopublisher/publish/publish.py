@@ -1,15 +1,15 @@
 import logging
 from contextvars import ContextVar
-from time import sleep
 from pathlib import Path
+from time import sleep
 
 from pyvirtualdisplay import Display
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.firefox.webdriver import WebDriver, Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.firefox.webdriver import Options, WebDriver
+from selenium.webdriver.support import expected_conditions as EC  # noqa:N812
+from selenium.webdriver.support.ui import WebDriverWait
 
 from autopublisher.config import FIREFOX_BINARY_PATH, config
 from autopublisher.documents.document import HtmlT
@@ -29,31 +29,32 @@ JPEG_TEMPLATE = """<!-- MAINPAGE JPEG -->
 
 """
 
+RASP_HTML_TEMPLATE = """<p><img src="/sites/default/files/{}" alt="" width="849" height="1200" /></p>"""  # noqa:E501
 
-class title_not_contains(object):
+
+class title_not_contains:  # noqa:N801
     """ An expectation for checking that the title contains a case-sensitive
     substring. title is the fragment of title expected
     returns True when the title matches, False otherwise
     """
-    def __init__(self, title):
+    def __init__(self, title: str):
         self.title = title
 
-    def __call__(self, driver):
+    def __call__(self, driver: WebDriver) -> bool:
         return self.title not in driver.title
 
 
-def get_driver():
+def get_driver() -> WebDriver:
     if config.server_mode:
         _display = Display(visible=False, size=(1366, 768))
         _display.start()
         display.set(_display)
     options = Options()
     options.binary_location = FIREFOX_BINARY_PATH
-    driver = webdriver.Firefox(options=options)
-    return driver
+    return webdriver.Firefox(options=options)
 
 
-def close_driver(driver: WebDriver):
+def close_driver(driver: WebDriver) -> None:
     driver.quit()
     _display = display.get()
     if _display is not None:
@@ -82,7 +83,7 @@ def login_to_site(attempts: int = 3) -> WebDriver:
     return driver
 
 
-def load_jpegs_to_site(*, driver: WebDriver, jpegs: list[Path]):
+def load_jpegs_to_site(*, driver: WebDriver, jpegs: list[Path]) -> None:
     """You must be logged in before uploading!"""
     for file_path in jpegs:
         filename = file_path.name
@@ -97,16 +98,18 @@ def load_jpegs_to_site(*, driver: WebDriver, jpegs: list[Path]):
 
 
 def create_rasp_html(jpegs: list[Path]) -> HtmlT:
-    HTML_TEMPLATE = """<p><img src="/sites/default/files/{}" alt="" width="849" height="1200" /></p>"""
-    html = ""
-    for jpeg in jpegs:
-        html += HTML_TEMPLATE.format(jpeg.name)
-    return html
+    html_items = [
+        RASP_HTML_TEMPLATE.format(jpeg.name)
+        for jpeg in jpegs
+    ]
+    return "".join(html_items)
 
 
 def update_rasp(driver: WebDriver, html: HtmlT) -> None:
     driver.get(config.site_rasp_url)
-    # driver.find_element(By.ID, "wysiwyg-toggle-edit-body-und-0-value").click()
+    # Раньше эта строчка работала, потом стала
+    #  выдавать ошибку драйвера Selenium
+    # driver.find_element(By.ID, "wysiwyg-toggle-edit-body-und-0-value").click()  # noqa:ERA001,E501
     driver.find_element(By.ID, "edit-body-und-0-value").clear()
     driver.find_element(By.ID, "edit-body-und-0-value").send_keys(html)
     driver.find_element(By.ID, "edit-submit").click()
@@ -140,13 +143,13 @@ def news(title: str, html: HtmlT, jpegs: list[Path]) -> str:
 
     for j, filename in enumerate(jpegs):
         driver.find_element(
-            By.ID, file_uploader_id.format(j)
+            By.ID, file_uploader_id.format(j),
         ).send_keys(str(filename))
         driver.find_element(
-            By.ID, file_uploader_btn.format(j)
+            By.ID, file_uploader_btn.format(j),
         ).click()
         wait.until(EC.presence_of_element_located(
-            (By.ID, file_uploader_id.format(j + 1))
+            (By.ID, file_uploader_id.format(j + 1)),
         ))
 
     driver.find_element(By.ID, "edit-submit").click()

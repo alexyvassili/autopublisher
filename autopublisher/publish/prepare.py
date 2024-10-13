@@ -1,21 +1,27 @@
 import logging
-import subprocess
 import shutil
-from bs4 import BeautifulSoup
-from datetime import datetime
+import subprocess
 from pathlib import Path
-from razdel import sentenize
 from typing import Any
 
+from bs4 import BeautifulSoup
+from razdel import sentenize
+
 from autopublisher.config import IMAGEMAGICK_PATH, SOFFICE_PATH, config
-from autopublisher.documents.image import Image
 from autopublisher.documents.document import (
-    HtmlT, format_rasp_docx, cd, resize_jpeg_on_wide_size,
-    docx2html, get_lines_from_html
+    HtmlT,
+    cd,
+    docx2html,
+    format_rasp_docx,
+    get_lines_from_html,
+    resize_jpeg_on_wide_size,
 )
+from autopublisher.documents.image import Image
+from autopublisher.utils.dt import get_dt_now_string
 from autopublisher.utils.file import (
-    format_img_name, get_file_size_mb,
-    get_files_for_extension
+    format_img_name,
+    get_file_size_mb,
+    get_files_for_extension,
 )
 
 
@@ -24,7 +30,9 @@ log = logging.getLogger(__name__)
 
 IMG_FOR_NEWS_FOLDER = "img"
 WIDE_SIDE_IMAGE = 1024
-HTML_P_START = """<p style="text-align: justify; text-indent: 20px;"><span style="font-size: 14pt; line-height: 115%; font-family: 'Times New Roman', 'serif'; color: #000000;">"""
+MAX_NEWS_IMAGE_SIZE_MB = 1.5
+
+HTML_P_START = """<p style="text-align: justify; text-indent: 20px;"><span style="font-size: 14pt; line-height: 115%; font-family: 'Times New Roman', 'serif'; color: #000000;">"""  # noqa:E501
 HTML_P_END = "</span></p>"
 
 
@@ -37,7 +45,7 @@ def check_rasp_folder(folder: Path) -> None:
     docxs = [item for item in folder.iterdir() if item.suffix == ".docx"]
     if not docxs:
         raise PrepareError("Can't find word file in mail")
-    elif len(docxs) > 1:
+    if len(docxs) > 1:
         raise PrepareError("Too many word files in mail")
 
     images = []
@@ -49,7 +57,7 @@ def check_rasp_folder(folder: Path) -> None:
 
 
 def rasp(mail_folder: Path) -> list[Path]:
-    rasp_img_name = "rasp_" + datetime.today().strftime("%Y-%m-%d-%H-%M-%S")
+    rasp_img_name = "rasp_" + get_dt_now_string()
     rasp_img_name = f"{rasp_img_name}.{config.rasp_image_format}"
     rasp_img_path = mail_folder / rasp_img_name
 
@@ -71,15 +79,15 @@ def rasp(mail_folder: Path) -> list[Path]:
             str(formatted_docx),
         ]
         log.info("RUN: %s", " ".join(soffice_command))
-        subprocess.call(soffice_command)
+        subprocess.call(soffice_command)  # noqa:S603
         pdf_name = mail_folder / f"{formatted_docx.stem}.pdf"
         if not pdf_name.exists():
             raise PrepareError(
-                f"Can't find formatted pdf: {formatted_docx}"
+                f"Can't find formatted pdf: {formatted_docx}",
             )
 
         # previous version of this command:
-        # ["convert", "-density", "300", PDF_NAME, "-quality", "100", JPG_NAME]
+        # ["convert", "-density", "300", PDF_NAME, "-quality", "100", JPG_NAME]  # noqa:ERA001,E501
         imagemagick_command = [
             IMAGEMAGICK_PATH,
             "-verbose",
@@ -93,9 +101,9 @@ def rasp(mail_folder: Path) -> list[Path]:
             str(rasp_img_path),
         ]
         log.info("RUN: %s", " ".join(imagemagick_command))
-        subprocess.call(imagemagick_command)
+        subprocess.call(imagemagick_command)  # noqa:S603
     rasp_images = get_files_for_extension(
-        mail_folder, config.rasp_image_format
+        mail_folder, config.rasp_image_format,
     )
     rasp_images.sort()
     log.info("Rasp images: %s", ", ".join(map(str, rasp_images)))
@@ -107,7 +115,7 @@ def rasp(mail_folder: Path) -> list[Path]:
 
 
 def prepare_jpegs_for_news(
-        *, jpegs: list[Path], jpegs_folder: Path
+        *, jpegs: list[Path], jpegs_folder: Path,
 ) -> list[Path]:
     """jpegs: full-path jpegs"""
     jpegs_for_news = []
@@ -118,9 +126,9 @@ def prepare_jpegs_for_news(
     for jpeg in jpegs:
         size = get_file_size_mb(jpeg)
         new_jpeg = jpegs_folder / formatted_names_jpegs[jpeg]
-        if size > 1.5:
+        if size > MAX_NEWS_IMAGE_SIZE_MB:
             resize_jpeg_on_wide_size(
-                jpeg, new_jpeg, WIDE_SIDE_IMAGE
+                jpeg, new_jpeg, WIDE_SIDE_IMAGE,
             )
         else:
             shutil.copyfile(jpeg, new_jpeg)
@@ -128,7 +136,7 @@ def prepare_jpegs_for_news(
     return jpegs_for_news
 
 
-def prepare_mainpage_jpeg(image: Image):
+def prepare_mainpage_jpeg(image: Image) -> None:
     # TODO: Unused function
     size = get_file_size_mb(image.path)
 
@@ -143,11 +151,10 @@ def prepare_html_for_news(mail_folder: Path) -> tuple[str, HtmlT]:
     docxs = get_files_for_extension(mail_folder, ".docx")
     if not docxs:
         raise PrepareError("Can't search news text in mail body")
-    elif len(docxs) > 1:
+    if len(docxs) > 1:
         raise PrepareError("Found many docx for one news")
-    else:
-        docx = docxs[0]
-        title, html = get_html_news_from_docx(docx)
+    docx = docxs[0]
+    title, html = get_html_news_from_docx(docx)
     return title, html
 
 
@@ -166,9 +173,10 @@ def prepare_text(text: str) -> tuple[str, list[str]]:
 
 
 def html_from_sentences(sentences: list[str]) -> HtmlT:
-    paragraphs = []
-    for line in sentences:
-        paragraphs.append(f"{HTML_P_START}{line}{HTML_P_END}")
+    paragraphs = [
+        f"{HTML_P_START}{line}{HTML_P_END}"
+        for line in sentences
+    ]
     return "\n".join(paragraphs)
 
 
