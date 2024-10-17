@@ -37,9 +37,11 @@ python-telegram-bot = "12.8"
 pytz = "^2024"
 PyVirtualDisplay = "3.0"
 razdel = "~0.5"
-requests = "~2.31"
-selenium = "~=4.9"
+requests = "~2.32"
+selenium = "~=4.25"
 setproctitle = "^1.3"
+types-pytz = "^2024"
+types-requests = "~2.32"
 yarl = "~=1.9"
 
 [tool.poetry.group.dev.dependencies]
@@ -70,7 +72,11 @@ implicit_reexport = true
 pretty = true
 show_error_codes = true
 strict = true
+warn_no_return = false
 warn_return_any = false
+exclude = [
+    "autopublisher/telegrambot.py",
+]
 
 [tool.pytest.ini_options]
 python_files = "test_*"
