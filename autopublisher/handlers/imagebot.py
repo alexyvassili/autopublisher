@@ -24,6 +24,8 @@ def edit_save(
         update: telegram.update.Update, context: CallbackContext,
 ) -> int:
     image = current_image.get()
+    if image is None:
+        raise RuntimeError("Current Image is None")
     text = update.message.text
     context.bot.send_message(
         chat_id=update.effective_chat.id,

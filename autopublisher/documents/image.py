@@ -104,8 +104,8 @@ def download_image(image_file: telegram.files.file.File) -> tuple[Path, str]:
 class Image:
     name: str
     folder: Path
-    start_date: datetime.date
-    end_date: datetime.date = None
+    start_date: datetime.date  # type: ignore[valid-type]
+    end_date: "datetime.date | None" = None  # type: ignore[valid-type]
 
     @property
     def path(self) -> Path:
@@ -126,7 +126,7 @@ class Image:
     @property
     def start_date_iso(self) -> str:
         if self.start_date:
-            return self.start_date.isoformat()
+            return self.start_date.isoformat()  # type: ignore[attr-defined]
 
     @property
     def end_date_iso(self) -> str:

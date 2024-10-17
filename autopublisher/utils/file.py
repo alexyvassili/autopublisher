@@ -12,10 +12,12 @@ def format_img_name(jpeg_name: str) -> str:
     return jpeg_name.lower()
 
 
-def get_file_size_mb(file_name: Path) -> float | None:
+def get_file_size_mb(file_name: Path) -> float:
     size = file_name.stat().st_size
     if size:
         return size / 1024 / 1024
+
+    raise RuntimeError("Файл %r имеет нулевой размер", size)
 
 
 def get_files_for_extension(

@@ -33,7 +33,7 @@ class cd:  # noqa:N801
     def __init__(self, new_path: Path):
         self.new_path = new_path.expanduser()
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.saved_path: Path = Path.cwd()
         os.chdir(self.new_path)
 
@@ -42,7 +42,7 @@ class cd:  # noqa:N801
             exc_type: type[BaseException] | None,
             value: BaseException | None,
             traceback: TracebackType | None,
-    ):
+    ) -> None:
         os.chdir(self.saved_path)
 
 
@@ -129,8 +129,8 @@ def disable_table_split_in_docx_xml(xml_name: Path) -> None:
     NS = {"w": NAMESPACE}  # noqa: N806
     NS_PREFIX = "{%s}" % NAMESPACE  # noqa: N806
     body = root.find("w:body", NS)
-    table = body.find("w:tbl", NS)
-    for tr in table.findall("w:tr", NS):
+    table = body.find("w:tbl", NS)  # type: ignore[union-attr]
+    for tr in table.findall("w:tr", NS):  # type: ignore[union-attr]
         add_cant_split_to_tr(tr, NS, NS_PREFIX)
     tree.write(xml_name)
 

@@ -44,14 +44,20 @@ class title_not_contains:  # noqa:N801
         return self.title not in driver.title
 
 
-def get_driver() -> WebDriver:
+def get_driver(*, retries: int = 3) -> WebDriver:
     if config.server_mode:
         _display = Display(visible=False, size=(1366, 768))
         _display.start()
         display.set(_display)
     options = Options()
     options.binary_location = FIREFOX_BINARY_PATH
-    return webdriver.Firefox(options=options)
+
+    for _ in range(retries):
+        try:
+            driver = webdriver.Firefox(options=options)
+            return driver
+        except Exception as e:
+            log.exception(e)
 
 
 def close_driver(driver: WebDriver) -> None:
@@ -63,15 +69,25 @@ def close_driver(driver: WebDriver) -> None:
 
 
 def login_to_site(attempts: int = 3) -> WebDriver:
+    if not config.site_username or not config.site_passwd:
+        raise RuntimeError("No site username or password provided")
     driver: WebDriver = get_driver()
     # TODO: add retry
+    error_message = "Не удалось открыть страницу логина на сайте"
     while True:
-        driver.get(str(config.site_login_url))
+        try:
+            driver.get(str(config.site_login_url))
+        except Exception as e:
+            log.exception(e)
+            attempts -= 1
+            if not attempts:
+                raise ValueError(error_message)
+            continue
         if "Лотошино" in driver.title:
             break
         attempts -= 1
         if not attempts:
-            raise ValueError("Не удалось открыть страницу логина на сайте")
+            raise ValueError(error_message)
     name_input = driver.find_element(By.ID, "edit-name")
     name_input.send_keys(config.site_username)
     passwd_input = driver.find_element(By.ID, "edit-pass")

@@ -32,6 +32,13 @@ CurrentMailT = ContextVar[maildriver.CurrentMail | None]
 current_mail: CurrentMailT = ContextVar("current_mail", default=None)
 
 
+def get_unwrapped_current_mail() -> maildriver.CurrentMail:
+    mail = current_mail.get()
+    if mail is None:
+        raise RuntimeError("Current Mail is None")
+    return mail
+
+
 def current_mail_clear() -> None:
     mail = current_mail.get()
     if mail:
@@ -96,6 +103,19 @@ def check_mail(
         )
         return ConversationHandler.END
 
+    if not mail_folder or not mail_metadata:
+        log.error(
+            "Письмо было загружено, "
+            "однако mail_folder или mail_metadata отсутствуют."  # noqa:COM812
+        )
+        log.error("Mail folder: %r", mail_folder)
+        log.error("Mail metadata: %r", mail_metadata)
+
+        raise RuntimeError(
+            "Письмо было загружено, "
+            "однако mail_folder или mail_metadata отсутствуют."  # noqa:COM812
+        )
+
     mail = maildriver.CurrentMail(
         mail_id=mail_id,
         mail_folder=mail_folder,
@@ -134,7 +154,7 @@ def from_me_check_mail(
 
 
 def news(update: telegram.update.Update, context: CallbackContext) -> int:
-    mail = current_mail.get()
+    mail = get_unwrapped_current_mail()
     if not mail.sentences:
         title, news_sentences = maildriver.get_text_for_news(mail)
         mail.title, mail.sentences = title, news_sentences
@@ -161,7 +181,7 @@ def news(update: telegram.update.Update, context: CallbackContext) -> int:
 def news_prepare(
         update: telegram.update.Update, context: CallbackContext,
 ) -> int:
-    mail = current_mail.get()
+    mail = get_unwrapped_current_mail()
     mail.images = maildriver.get_images_for_news(mail)
     if mail.images:
         imgs = "\n".join(
@@ -201,7 +221,7 @@ def edit_save(
         line.replace("\n", " ")
         for line in text[1:-1].split(">\n<")
     ]
-    mail = current_mail.get()
+    mail = get_unwrapped_current_mail()
     mail.sentences = sentences
     return news(update, context)
 
@@ -211,7 +231,7 @@ def rasp(update: telegram.update.Update, context: CallbackContext) -> int:
         chat_id=update.effective_chat.id,
         text="Подготовка...",
     )
-    mail = current_mail.get()
+    mail = get_unwrapped_current_mail()
     rasp_images = prepare.rasp(mail.folder)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -233,7 +253,15 @@ def rasp(update: telegram.update.Update, context: CallbackContext) -> int:
 def publish_news(
         update: telegram.update.Update, context: CallbackContext,
 ) -> int:
-    mail = current_mail.get()
+    mail = get_unwrapped_current_mail()
+    if not mail.title:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Ошибка: заголовок новости отсутствует",
+        )
+        current_mail_clear()
+        return ConversationHandler.END
+
     html = prepare.html_from_sentences(mail.sentences)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
