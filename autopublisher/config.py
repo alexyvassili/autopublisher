@@ -1,3 +1,5 @@
+# type: ignore[operator]
+
 import platform
 from dataclasses import dataclass
 from pathlib import Path

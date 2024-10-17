@@ -183,7 +183,7 @@ def html_from_sentences(sentences: list[str]) -> HtmlT:
 def get_html_news_from_docx(docx: Path) -> tuple[str, HtmlT]:
     html, messages = docx2html(docx)
     soup = BeautifulSoup(html, "html.parser")
-    paragraphs = []
+    paragraphs: list[str] = []
     title = None
     for p in soup.find_all("p"):
         string_p = str(p)
@@ -194,7 +194,7 @@ def get_html_news_from_docx(docx: Path) -> tuple[str, HtmlT]:
         string_p = string_p.replace("</p>", HTML_P_END)
         paragraphs.append(string_p)
     news_html = "\n".join(paragraphs)
-    return title, news_html
+    return title, news_html  # type: ignore[return-value]
 
 
 def find_body_lines_in_fwd_mail(lines: list[str]) -> list[str]:

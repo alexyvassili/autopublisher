@@ -32,8 +32,8 @@ class CurrentMail:
         self.about: str = get_mail_about(mail_metadata, self.text)
         self.attachments: list[str] = self.metadata["Attachments"]
         self.title: str | None = None
-        self.sentences: list[str] | None = None
-        self.images: list[Path] | None = None
+        self.sentences: list[str] = []
+        self.images: list[Path] = []
         self._prepare_attachments()
 
     def _prepare_attachments(self) -> None:
@@ -82,7 +82,7 @@ def load_one_mail_rollback(mail_id: str, mail_folder: Path) -> None:
 
 def load_most_old_mail_from(
         mail_from: str,
-) -> tuple[str, Path, dict[str, Any]]:
+) -> tuple[str | None, Path | None, dict[str, Any] | None]:
     mail_id, mail_folder, mail_metadata = None, None, None
     log.info("Connecting to mail server...")
     connection = mail.get_connection()

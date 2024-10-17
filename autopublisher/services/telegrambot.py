@@ -44,7 +44,7 @@ class Proxy:
         return self.url
 
     def to_kwargs(self) -> dict[str, Any]:
-        proxy_args = dict()  # noqa:C408
+        proxy_args = dict[str, Any]()
         if self.full_url:
             proxy_args["proxy_url"] = self.full_url
         if self.username and self.passwd:
