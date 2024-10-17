@@ -44,7 +44,7 @@ clean-pyc:
 	find . -iname '*.pyc' -delete
 
 lint:
-	poetry run ruff $(PROJECT_PATH) tests
+	poetry run ruff check $(PROJECT_PATH) tests
 	poetry run mypy $(PROJECT_PATH)
 
 format:
