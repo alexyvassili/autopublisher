@@ -102,13 +102,13 @@ date_regexps = (
 )
 
 
-def add_date(text: str, dt: date | None = None) -> date:
+def add_date(text: str, dt: date | None = None) -> date | None:
     dt = dt or get_dt_now().date()
     text = text.strip()
 
     if text in simple_intervals:
         interval = simple_intervals[text]
-        delta = relativedelta(**{interval: 1})
+        delta = relativedelta(**{interval: 1})  # type: ignore[arg-type]
         return dt + delta
 
     for regexp in interval_regexps:
@@ -117,7 +117,7 @@ def add_date(text: str, dt: date | None = None) -> date:
             continue
         num, interval = parsed.groups()
         num, interval = int(numbers.get(num, num)), intervals[interval]
-        delta = relativedelta(**{interval: num})
+        delta = relativedelta(**{interval: num})  # type: ignore[arg-type]
         return dt + delta
 
     for regexp in date_regexps:

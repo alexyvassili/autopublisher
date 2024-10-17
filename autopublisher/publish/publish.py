@@ -44,7 +44,7 @@ class title_not_contains:  # noqa:N801
         return self.title not in driver.title
 
 
-def get_driver(*, retries: int = 3) -> WebDriver:
+def get_driver(*, retries: int = 3, wait: int = 3) -> WebDriver:
     if config.server_mode:
         _display = Display(visible=False, size=(1366, 768))
         _display.start()
@@ -55,9 +55,13 @@ def get_driver(*, retries: int = 3) -> WebDriver:
     for _ in range(retries):
         try:
             driver = webdriver.Firefox(options=options)
+        except Exception:
+            log.exception("Unable to create webdriver.Firefox")
+            sleep(wait)
+        else:
             return driver
-        except Exception as e:
-            log.exception(e)
+
+    raise RuntimeError("Unable to create webdriver.Firefox")
 
 
 def close_driver(driver: WebDriver) -> None:
@@ -78,10 +82,10 @@ def login_to_site(attempts: int = 3) -> WebDriver:
         try:
             driver.get(str(config.site_login_url))
         except Exception as e:
-            log.exception(e)
+            log.exception("Unable to open site login page")
             attempts -= 1
             if not attempts:
-                raise ValueError(error_message)
+                raise ValueError(error_message) from e
             continue
         if "Лотошино" in driver.title:
             break

@@ -41,7 +41,7 @@ def get_salt(size: int = 8) -> str:
     return "".join(random.choice(chars) for _ in range(size))
 
 
-def iso_fmt_dt_now(tz: pytz.timezone = DEFAULT_TZ) -> str:
+def iso_fmt_dt_now(tz: pytz.timezone = DEFAULT_TZ) -> str:  # type: ignore[valid-type]
     return datetime.now(tz=tz).isoformat()
 
 
@@ -77,7 +77,7 @@ def get_possible_type_from_magic_text(magic_text: str) -> str:
     return magic_text.split(" ", 1)[0]
 
 
-def get_start_date(tz: pytz.timezone = DEFAULT_TZ) -> datetime.date:
+def get_start_date(tz: pytz.timezone = DEFAULT_TZ) -> datetime.date:  # type: ignore[valid-type]
     return datetime.now(tz=tz).date()
 
 
@@ -124,19 +124,19 @@ class Image:
         return get_possible_type_from_magic_text(self.magic_text)
 
     @property
-    def start_date_iso(self) -> str:
+    def start_date_iso(self) -> str | None:
         if self.start_date:
             return self.start_date.isoformat()  # type: ignore[attr-defined]
 
     @property
-    def end_date_iso(self) -> str:
+    def end_date_iso(self) -> str | None:
         if self.end_date:
             return self.end_date.isoformat()
 
     @classmethod
     def from_telegram_file(cls, image_file: telegram.files.file.File) -> Self:
         image_folder, image_name = download_image(image_file)
-        return Image(
+        return Image(  # type: ignore[return-value]
             name=image_name,
             folder=image_folder,
             start_date=get_start_date(),
@@ -145,4 +145,4 @@ class Image:
     def clear(self) -> None:
         if self.folder:
             shutil.rmtree(self.folder)
-        self.__init__()
+        self.__init__()  # type: ignore[misc]

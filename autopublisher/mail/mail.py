@@ -56,7 +56,7 @@ def get_attachments_list(message: email.message.Message) -> list[str]:
                 filename = bts.decode(encoding)
 
             attachments.append(filename)
-    return attachments
+    return attachments  # type: ignore[return-value]
 
 
 def get_mail_metadata(message: email.message.Message) -> dict[str, Any]:
@@ -69,10 +69,10 @@ def get_mail_metadata(message: email.message.Message) -> dict[str, Any]:
         # get_payload can return list or bytes str, so
         # try with str raise AttributeError:
         # "str" object has no attribute "get_payload"
-        mail_body = message.get_payload()[0].get_payload(decode=True)
+        mail_body = message.get_payload()[0].get_payload(decode=True)  # type: ignore[union-attr,index]
     except AttributeError:
         mail_body = message.get_payload(decode=True)
-    mail_metadata["Body"] = mail_body.decode() if mail_body else ""
+    mail_metadata["Body"] = mail_body.decode() if mail_body else ""  # type: ignore[union-attr]
     mail_metadata["Attachments"] = get_attachments_list(message)
     return mail_metadata
 
@@ -85,7 +85,7 @@ def get_message(
     response, mail_binary_data = connection.fetch(mail_id, "(RFC822)")
     if response != "OK":
         raise ValueError(f"Response status is not OK: `{response}`")
-    return email.message_from_bytes(mail_binary_data[0][1])
+    return email.message_from_bytes(mail_binary_data[0][1])  # type: ignore[arg-type,index]
 
 
 def save_email(message: email.message.Message, mail_folder: Path) -> None:
@@ -114,7 +114,7 @@ def save_email(message: email.message.Message, mail_folder: Path) -> None:
             if encoding:
                 filename = bts.decode(encoding)
         counter += 1
-        file_path = mail_folder / filename
+        file_path = mail_folder / filename  # type: ignore[operator]
         with file_path.open("wb") as fp:
             # Сломано письмом Кошелева от 3 марта 2020
             # во вложениях неопознанный .txt (читается)
@@ -124,7 +124,7 @@ def save_email(message: email.message.Message, mail_folder: Path) -> None:
             # В принципе, нам это не нужно, но само явление любопытное
             # FIX: оборачиваем в exception и создаем пустой файл
             try:
-                fp.write(part.get_payload(decode=True))
+                fp.write(part.get_payload(decode=True))  # type: ignore[arg-type]
             except TypeError:
                 logging.warning(
                     "Сохранение %s не удалось: получен не строковый объект.",

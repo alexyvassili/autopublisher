@@ -1,7 +1,4 @@
-# type: ignore[operator]
-
 import platform
-from dataclasses import dataclass
 from pathlib import Path
 
 from yarl import URL
@@ -33,20 +30,19 @@ SITE_NEWS_PATH = "node/add/news"
 SITE_MAINPAGE_EDIT_PATH = "node/17/edit"
 
 
-@dataclass
 class Config:
-    server_mode: str | None = None
+    server_mode: str
 
-    telegram_bot_owner_id: int | None = None
+    telegram_bot_owner_id: int
 
-    mail_server: str | None = None
-    mail_login: str | None = None
-    mail_passwd: str | None = None
-    mail_from: str | None = None
-    alternate_mail: str | None = None
-    site_url: URL | None = None
-    site_username: str | None = None
-    site_passwd: str | None = None
+    mail_server: str
+    mail_login: str
+    mail_passwd: str
+    mail_from: str
+    alternate_mail: str
+    site_url: URL
+    site_username: str
+    site_passwd: str
 
     rasp_image_format: str = "png"
 
