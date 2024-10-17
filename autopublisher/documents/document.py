@@ -244,6 +244,6 @@ def unrar(rarfile: Path, folder: Path) -> str:
     )
     output, err = p.communicate()
     rc = p.returncode
-    output = output.decode()
-    err = err.decode()
-    return f"Output: \n{output}\nErrors: \n{err}\nReturn Code: {rc}"
+    output = output.decode()  # type: ignore[assignment]
+    err = err.decode()  # type: ignore[assignment]
+    return f"Output: \n{output}\nErrors: \n{err}\nReturn Code: {rc}"  # type: ignore[str-bytes-safe]

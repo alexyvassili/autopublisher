@@ -8,7 +8,7 @@ from telegram.ext.callbackcontext import CallbackContext
 from autopublisher.config import config
 
 
-def owner_only(bot_handler: Callable) -> Callable:
+def owner_only(bot_handler: Callable) -> Callable:  # type: ignore[type-arg]
 
     @wraps(bot_handler)
     def wrapper(
