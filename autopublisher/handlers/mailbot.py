@@ -23,9 +23,9 @@ log = logging.getLogger(__name__)
 
 
 # Stages
-SEARCH, TEXT, PUBLISH, RASPLOAD = range(4)
+SEARCH, TEXT, TITLE, PUBLISH, RASPLOAD = range(5)
 # Callback data
-NEWS, RASP, CANCEL, YES, NO, EDIT = range(6)
+NEWS, RASP, CANCEL, YES, NO, EDIT, EDIT_TITLE = range(7)
 
 
 CurrentMailT = ContextVar[maildriver.CurrentMail | None]
@@ -166,6 +166,7 @@ def news(update: telegram.update.Update, context: CallbackContext) -> int:
     keyboard = [
         [InlineKeyboardButton("Yes", callback_data=str(YES)),
          InlineKeyboardButton("Edit", callback_data=str(EDIT)),
+         InlineKeyboardButton("Edit title", callback_data=str(EDIT_TITLE)),
          InlineKeyboardButton("Cancel", callback_data=str(CANCEL))],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -223,6 +224,25 @@ def edit_save(
     ]
     mail = get_unwrapped_current_mail()
     mail.sentences = sentences
+    return news(update, context)
+
+
+def edit_title_wait(
+        update: telegram.update.Update, context: CallbackContext,
+) -> int:
+    context.bot.send_message(
+        chat_id=update.effective_chat.id, text="Новый заголовок новости:",
+    )
+    return TITLE
+
+
+def edit_title_save(
+        update: telegram.update.Update, context: CallbackContext,
+) -> int:
+    text = update.message.text
+    text = text.strip()
+    mail = get_unwrapped_current_mail()
+    mail.title = text
     return news(update, context)
 
 
@@ -305,8 +325,12 @@ mail_handler = ConversationHandler(
                  CallbackQueryHandler(cancel, pattern=f"^{CANCEL}$")],
         TEXT: [CallbackQueryHandler(news_prepare, pattern=f"^{YES}$"),
                CallbackQueryHandler(edit_wait, pattern=f"^{EDIT}$"),
+               CallbackQueryHandler(
+                   edit_title_wait, pattern=f"^{EDIT_TITLE}$",
+               ),
                MessageHandler(Filters.text, edit_save),
                CallbackQueryHandler(cancel, pattern=f"^{CANCEL}$")],
+        TITLE: [MessageHandler(Filters.text, edit_title_save)],
         PUBLISH: [CallbackQueryHandler(publish_news, pattern=f"^{YES}$"),
                   CallbackQueryHandler(cancel, pattern=f"^{NO}$")],
     },
