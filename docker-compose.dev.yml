@@ -1,9 +1,0 @@
-version: "3.4"
-services:
-  autopublisher:
-    image: ${DOCKER_IMAGE}
-    volumes:
-      - /tmp:/tmp:rw
-    env_file:
-      # Put all variables to start autopublisher local here
-      - .env
