@@ -2,16 +2,15 @@ import logging
 import traceback
 from contextvars import ContextVar
 
-import telegram.update
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
+    ContextTypes,
     ConversationHandler,
-    Filters,
     MessageHandler,
+    filters,
 )
-from telegram.ext.callbackcontext import CallbackContext
 
 from autopublisher.config import TELEGRAM_API_MESSAGE_LIMIT, config
 from autopublisher.mail import maildriver
@@ -53,29 +52,29 @@ def current_mail_rollback() -> None:
     current_mail.set(None)
 
 
-def catch_error(
-        update: telegram.update.Update,
-        context: CallbackContext,
+async def catch_error(
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE,
         exc: Exception,
 ) -> int:
     log.exception(exc)
     tbc = traceback.format_exc()
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Произошла ошибка!",
     )
     if len(tbc) > TELEGRAM_API_MESSAGE_LIMIT:
         tbc = tbc[-TELEGRAM_API_MESSAGE_LIMIT:]
-    context.bot.send_message(chat_id=update.effective_chat.id, text=tbc)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=tbc)
     mail = current_mail.get()
     if mail:
         mail.rollback()
     return ConversationHandler.END
 
 
-def check_mail(
-        update: telegram.update.Update,
-        context: CallbackContext,
+async def check_mail(
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE,
         mail_from: str,
         name_for_msg: str,
 ) -> int:
@@ -85,11 +84,10 @@ def check_mail(
     keyboard = [
         [InlineKeyboardButton("News", callback_data=str(NEWS)),
          InlineKeyboardButton("Rasp", callback_data=str(RASP)),
-         InlineKeyboardButton("Cancel", callback_data=str(CANCEL)),
-         ],
+         InlineKeyboardButton("Cancel", callback_data=str(CANCEL))],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id, text="Проверяю почту...",
     )
     mail_id, mail_folder, mail_metadata = maildriver.load_most_old_mail_from(
@@ -97,7 +95,7 @@ def check_mail(
     )
     logging.info("Sending request to get mail from %s", mail_from)
     if mail_id is None:
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=f"Новых писем от {name_for_msg} нет!",
         )
@@ -122,10 +120,10 @@ def check_mail(
         mail_metadata=mail_metadata,
     )
     current_mail.set(mail)
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id, text="Есть письмо",
     )
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=mail.about,
         reply_markup=reply_markup,
@@ -134,32 +132,32 @@ def check_mail(
 
 
 @owner_only
-def from_koshelev_check_mail(
-        update: telegram.update.Update,
-        context: CallbackContext,
+async def from_koshelev_check_mail(
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE,
 ) -> int:
-    return check_mail(update, context, config.mail_from, "Кошелева")
+    return await check_mail(update, context, config.mail_from, "Кошелева")
 
 
 @owner_only
-def from_me_check_mail(
-        update: telegram.update.Update, context: CallbackContext,
+async def from_me_check_mail(
+        update: Update, context: ContextTypes.DEFAULT_TYPE,
 ) -> int:
     """
     TODO: Warning! Будет найдено и предложено к обработке
      любое письмо с моего адреса. Хотя я планирую добавить
      что-то типа if "LOTOSHINO" in Subject
     """
-    return check_mail(update, context, config.alternate_mail, "меня")
+    return await check_mail(update, context, config.alternate_mail, "меня")
 
 
-def news(update: telegram.update.Update, context: CallbackContext) -> int:
+async def news(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     mail = get_unwrapped_current_mail()
     if not mail.sentences:
         title, news_sentences = maildriver.get_text_for_news(mail)
         mail.title, mail.sentences = title, news_sentences
     text_to_show = "<" + ">\n<".join(mail.sentences) + ">"
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=f"Title: {mail.title}",
     )
@@ -170,7 +168,7 @@ def news(update: telegram.update.Update, context: CallbackContext) -> int:
          InlineKeyboardButton("Cancel", callback_data=str(CANCEL))],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=text_to_show,
         reply_markup=reply_markup,
@@ -179,8 +177,8 @@ def news(update: telegram.update.Update, context: CallbackContext) -> int:
     return TEXT
 
 
-def news_prepare(
-        update: telegram.update.Update, context: CallbackContext,
+async def news_prepare(
+        update: Update, context: ContextTypes.DEFAULT_TYPE,
 ) -> int:
     mail = get_unwrapped_current_mail()
     mail.images = maildriver.get_images_for_news(mail)
@@ -197,7 +195,7 @@ def news_prepare(
          InlineKeyboardButton("Cancel", callback_data=str(NO))],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=imgs,
         reply_markup=reply_markup,
@@ -205,17 +203,17 @@ def news_prepare(
     return PUBLISH
 
 
-def edit_wait(
-        update: telegram.update.Update, context: CallbackContext,
+async def edit_wait(
+        update: Update, context: ContextTypes.DEFAULT_TYPE,
 ) -> int:
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id, text="Кидай текст",
     )
     return TEXT
 
 
-def edit_save(
-        update: telegram.update.Update, context: CallbackContext,
+async def edit_save(
+        update: Update, context: ContextTypes.DEFAULT_TYPE,
 ) -> int:
     text = update.message.text
     sentences = [
@@ -224,58 +222,58 @@ def edit_save(
     ]
     mail = get_unwrapped_current_mail()
     mail.sentences = sentences
-    return news(update, context)
+    return await news(update, context)
 
 
-def edit_title_wait(
-        update: telegram.update.Update, context: CallbackContext,
+async def edit_title_wait(
+        update: Update, context: ContextTypes.DEFAULT_TYPE,
 ) -> int:
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id, text="Новый заголовок новости:",
     )
     return TITLE
 
 
-def edit_title_save(
-        update: telegram.update.Update, context: CallbackContext,
+async def edit_title_save(
+        update: Update, context: ContextTypes.DEFAULT_TYPE,
 ) -> int:
     text = update.message.text
     text = text.strip()
     mail = get_unwrapped_current_mail()
     mail.title = text
-    return news(update, context)
+    return await news(update, context)
 
 
-def rasp(update: telegram.update.Update, context: CallbackContext) -> int:
-    context.bot.send_message(
+async def rasp(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Подготовка...",
     )
     mail = get_unwrapped_current_mail()
     rasp_images = prepare.rasp(mail.folder)
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Публикуем расписание",
     )
     try:
         url = publish.rasp(rasp_images)
     except Exception as e:
-        return catch_error(update=update, context=context, exc=e)
-    context.bot.send_message(
+        return await catch_error(update=update, context=context, exc=e)
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Опубликовано!",
     )
-    context.bot.send_message(chat_id=update.effective_chat.id, text=url)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=url)
     current_mail_clear()
     return ConversationHandler.END
 
 
-def publish_news(
-        update: telegram.update.Update, context: CallbackContext,
+async def publish_news(
+        update: Update, context: ContextTypes.DEFAULT_TYPE,
 ) -> int:
     mail = get_unwrapped_current_mail()
     if not mail.title:
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Ошибка: заголовок новости отсутствует",
         )
@@ -283,34 +281,34 @@ def publish_news(
         return ConversationHandler.END
 
     html = prepare.html_from_sentences(mail.sentences)
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Публикуем",
     )
     try:
         url = publish.news(mail.title, html, mail.images)
     except Exception as e:
-        return catch_error(update=update, context=context, exc=e)
-    context.bot.send_message(
+        return await catch_error(update=update, context=context, exc=e)
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Опубликовано!",
     )
-    context.bot.send_message(chat_id=update.effective_chat.id, text=url)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=url)
     current_mail_clear()
     return ConversationHandler.END
 
 
-def cancel(update: telegram.update.Update, context: CallbackContext) -> int:
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     current_mail_rollback()
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Отмена",
     )
     return ConversationHandler.END
 
 
-def echo(update: telegram.update.Update, context: CallbackContext) -> None:
-    context.bot.send_message(
+async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=f"Fallback echo\n{update.message.text}",
     )
@@ -328,9 +326,9 @@ mail_handler = ConversationHandler(
                CallbackQueryHandler(
                    edit_title_wait, pattern=f"^{EDIT_TITLE}$",
                ),
-               MessageHandler(Filters.text, edit_save),
+               MessageHandler(filters.TEXT, edit_save),
                CallbackQueryHandler(cancel, pattern=f"^{CANCEL}$")],
-        TITLE: [MessageHandler(Filters.text, edit_title_save)],
+        TITLE: [MessageHandler(filters.TEXT, edit_title_save)],
         PUBLISH: [CallbackQueryHandler(publish_news, pattern=f"^{YES}$"),
                   CallbackQueryHandler(cancel, pattern=f"^{NO}$")],
     },

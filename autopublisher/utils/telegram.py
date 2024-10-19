@@ -1,26 +1,28 @@
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 from functools import wraps
-from typing import Any
 
-import telegram.update
-from telegram.ext.callbackcontext import CallbackContext
+from telegram import Update
+from telegram.ext import ContextTypes
 
 from autopublisher.config import config
 
 
-def owner_only(bot_handler: Callable) -> Callable:  # type: ignore[type-arg]
+BotHandlerT = Callable[..., Coroutine]  # type: ignore[type-arg]
+
+
+def owner_only(bot_handler: BotHandlerT) -> BotHandlerT:
 
     @wraps(bot_handler)
-    def wrapper(
-            update: telegram.update.Update, context: CallbackContext,
-    ) -> Any:
+    async def wrapper(
+            update: Update, context: ContextTypes.DEFAULT_TYPE,
+    ) -> None:
         owner_id = config.telegram_bot_owner_id
         if update.message.from_user.id != owner_id:
-            context.bot.send_message(
+            await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Ты не мой хозяин",
             )
             return
-        return bot_handler(update, context)
+        return await bot_handler(update, context)
 
     return wrapper

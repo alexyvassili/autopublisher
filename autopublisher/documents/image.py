@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Self
 
 import pytz
-import telegram.update
+import telegram
 
 from autopublisher.config import config
 from autopublisher.utils.file import format_img_name
@@ -81,11 +81,11 @@ def get_start_date(tz: pytz.timezone = DEFAULT_TZ) -> datetime.date:  # type: ig
     return datetime.now(tz=tz).date()
 
 
-def download_image(image_file: telegram.files.file.File) -> tuple[Path, str]:
+async def download_image(image_file: telegram.File) -> tuple[Path, str]:
     image_tmp_folder = get_image_tmp_folder()
     img_name = get_img_name()
     image_download_path = image_tmp_folder / get_img_download_name(img_name)
-    image_file.download(image_download_path)
+    await image_file.download_to_drive(image_download_path)
     log.info("Loaded image to: %s", image_download_path)
     magic_text = get_magic_text(image_download_path)
     log.info("Magic text: %s", magic_text)
@@ -134,8 +134,8 @@ class Image:
             return self.end_date.isoformat()
 
     @classmethod
-    def from_telegram_file(cls, image_file: telegram.files.file.File) -> Self:
-        image_folder, image_name = download_image(image_file)
+    async def from_telegram_file(cls, image_file: telegram.File) -> Self:
+        image_folder, image_name = await download_image(image_file)
         return Image(  # type: ignore[return-value]
             name=image_name,
             folder=image_folder,

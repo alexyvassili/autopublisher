@@ -1,13 +1,12 @@
-import telegram.update
-from telegram.ext import CommandHandler
-from telegram.ext.callbackcontext import CallbackContext
+from telegram import Update
+from telegram.ext import CommandHandler, ContextTypes
 
 from autopublisher.utils.telegram import owner_only
 
 
 @owner_only
-def start(update: telegram.update.Update, context: CallbackContext) -> None:
-    context.bot.send_message(
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Привет, хозяин!",
     )

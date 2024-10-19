@@ -1,22 +1,25 @@
 import logging
 import traceback
 
-import telegram.update
-from telegram.ext.callbackcontext import CallbackContext
+from telegram import Update
+from telegram.ext import ContextTypes
 
 from autopublisher.config import TELEGRAM_API_MESSAGE_LIMIT
 
 
-def error_handler(
-        update: telegram.update.Update, context: CallbackContext,
+log = logging.getLogger(__name__)
+
+
+async def error_handler(
+        update: Update, context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
     """Log Errors caused by Updates."""
     logging.warning('Update "%s" caused error "%s"', update, context.error)
     tbc = traceback.format_exc()
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Произошла ошибка!",
     )
     if len(tbc) > TELEGRAM_API_MESSAGE_LIMIT:
         tbc = tbc[-TELEGRAM_API_MESSAGE_LIMIT:]
-    context.bot.send_message(chat_id=update.effective_chat.id, text=tbc)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=tbc)

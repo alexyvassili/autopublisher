@@ -1,15 +1,14 @@
-import telegram.update
-from telegram.ext import Filters, MessageHandler
-from telegram.ext.callbackcontext import CallbackContext
+from telegram import Update
+from telegram.ext import ContextTypes, MessageHandler, filters
 
 
-def any_answer(
-        update: telegram.update.Update, context: CallbackContext,
+async def any_answer(
+        update: Update, context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="А больше я ничего и не умею!",
     )
 
 
-any_handler = MessageHandler(Filters.all, any_answer)
+any_handler = MessageHandler(filters.ALL, any_answer)

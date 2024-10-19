@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "autopublisher"
-version = "3.1.0"
+version = "4.0.0"
 description = "Script for automatic publish news and updates from email to drupal site"
 authors = ["Alexey <escantor@gmail.com>"]
 classifiers = [
@@ -33,7 +33,7 @@ mammoth = "~1.6"
 Pillow = "~10.2"
 python-dateutil = "~2.8"
 python-magic = "~0.4.27"
-python-telegram-bot = "12.8"
+python-telegram-bot = "^21.6"
 pytz = "^2024"
 PyVirtualDisplay = "3.0"
 razdel = "~0.5"

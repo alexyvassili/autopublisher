@@ -1,8 +1,8 @@
 import logging
 from dataclasses import dataclass
-from typing import Any
 
-from telegram.ext import Updater
+from telegram import Update
+from telegram.ext import Application
 from yarl import URL
 
 from autopublisher.handlers.any_handler import any_handler
@@ -17,6 +17,10 @@ log = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",
 )
+
+# set higher logging level for httpx
+# to avoid all GET and POST requests being logged
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 HANDLERS = [
@@ -39,20 +43,22 @@ class Proxy:
 
     @property
     def full_url(self) -> URL | None:
-        if self.url and self.port:
-            return self.url.with_port(self.port)
-        return self.url
+        if self.url is None:
+            return self.url
 
-    def to_kwargs(self) -> dict[str, Any]:
-        proxy_args = dict[str, Any]()
-        if self.full_url:
-            proxy_args["proxy_url"] = self.full_url
-        if self.username and self.passwd:
-            proxy_args["urllib3_proxy_kwargs"] = {
-                "username": self.username,
-                "password": self.passwd,
-            }
-        return proxy_args
+        url = self.url
+        if self.port:
+            url = self.url.with_port(self.port)
+
+        if self.username:
+            if not self.passwd:
+                raise ValueError(
+                    "Not all of 'proxy username, proxy password' was provided",
+                )
+
+            url = url.with_user(self.username).with_password(self.passwd)
+
+        return url
 
 
 class TelegramBot:
@@ -68,20 +74,17 @@ class TelegramBot:
         self.proxy = proxy
 
     def start(self) -> None:
-        updater = Updater(
-            token=self.token,
-            use_context=True,
-            request_kwargs=self.proxy.to_kwargs(),
-        )
-        dispatcher = updater.dispatcher
+        # Create the Application and pass it your bot's token.
+        application = Application.builder().token(self.token)
+        if self.proxy.full_url:
+            application = application.proxy(str(self.proxy.full_url))
+        application = application.build()
+
         for handler in HANDLERS:
-            dispatcher.add_handler(handler)
+            application.add_handler(handler)
 
         for err_handler in ERROR_HANDLERS:
-            dispatcher.add_error_handler(err_handler)
-        updater.start_polling()
+            application.add_error_handler(err_handler)
 
-        # Run the bot until you press Ctrl-C or the process receives SIGINT,
-        # SIGTERM or SIGABRT. This should be used most of the time, since
-        # start_polling() is non-blocking and will stop the bot gracefully.
-        updater.idle()
+        # Run the bot until the user presses Ctrl-C
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
