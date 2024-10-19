@@ -5,10 +5,10 @@
 
 ---
 
-☑️ &mdash; Update max line length to 80  
-☑️ &mdash; Add pylama  
-☑️ &mdash; Add mypy  
-☑️ &mdash; Add type hints  
+✅️ &mdash; Update max line length to 80  
+✅️ &mdash; Add pylama   (added ruff)
+✅️ &mdash; Add mypy  
+✅️ &mdash; Add type hints  
 
 
 ---
@@ -25,8 +25,8 @@
 
 ✅️ &mdash; Upgrade package versions in `requirements.txt`  
 ☑️ &mdash; Upgrade Python version to 3.12  
-☑️ &mdash; Upgrade telegram lib  
-☑️ &mdash; Upgrade to async  
+✅️ &mdash; Upgrade telegram lib  
+✅️ &mdash; Upgrade to async  
 ✅️ &mdash; Upgrade Selenium to version 4  
 ✅️ &mdash; Upgrade LibreOffice  
 
@@ -34,27 +34,30 @@
 
 ✅️ &mdash; Build project as setup.py Python package 
 
-☑️ &mdash; Move project to ya-service-template   
-☑️ &mdash; Build project as poetry Python package  
-☑️ &mdash; Build project as Docker package  
-☑️ &mdash; Add .env file  
-☑️ &mdash; Add config argparser
-☑️ &mdash; Add SERVER_MODE = False on Desktop 
+✅️ &mdash; Move project to ya-service-template   
+✅️ &mdash; Build project as poetry Python package  
+☑️ &mdash; ~~Build project as Docker package~~   
+✅️ &mdash; Add .env file  
+✅️ &mdash; Add config argparser  
+✅️ &mdash; Add SERVER_MODE = False on Desktop 
 (or authomatic search displays) - configargparse  
 ☑️ &mdash; Update secrets handling  
+✅️ &mdash; Add logging  
 ☑️ &mdash; Add logging (on server file maybe)  
-☑️ &mdash; Сделать MailClient
-☑️ &mdash; Сделать, чтобы из докера можно было запускать браузер в графическом режиме
-☑️ &mdash; На данный момент запуск в Docker не работает, нужно переписать не на Docker
+☑️ &mdash; ~~Сделать MailClient (?)~~  
+☑️ &mdash; ~~Сделать, чтобы из докера можно было запускать браузер в графическом режиме~~  
+✅️ &mdash; На данный момент запуск в Docker не работает, нужно переписать не на Docker
 
 ---
 
 ✅️ &mdash; Fix empty mail body error  
-☑️ &mdash; Добавить PNG картинки  
+✅️ &mdash; Добавить PNG картинки  
 ✅️ &mdash; Сделать дефолтный Title новости  
-☑️ &mdash; Сделать редактирование Title новости  
+✅️ &mdash; Сделать редактирование Title новости  
 ☑️ &mdash; Определять, есть ли вообще Title в .docx документе  
-☑️ &mdash; Отмечать документ как непрочитанный при всех ошибках
+✅️ &mdash; Отмечать документ как непрочитанный при всех ошибках
 (Сейчас ошибка при нажатии кнопки Yes 
 (`FileNotFoundError: [Errno 2] No such file or directory: 'convert'`) 
 в новости не обрабатывается)
+
+☑️ &mdash; Сделать передачу письма и картинки через контекст самого бота    
