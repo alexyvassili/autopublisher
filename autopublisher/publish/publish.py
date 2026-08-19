@@ -5,7 +5,6 @@ from time import sleep
 
 from pyvirtualdisplay import Display
 from selenium import webdriver
-from selenium.common.exceptions import ElementNotInteractableException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.webdriver import Options, WebDriver
@@ -31,6 +30,29 @@ JPEG_TEMPLATE = """<!-- MAINPAGE JPEG -->
 """
 
 RASP_HTML_TEMPLATE = """<p><img src="/sites/default/files/{}" alt="" width="849" height="1200" /></p>"""  # noqa:E501
+RASP_BODY_FIELD_ID = "edit-body-und-0-value"
+RASP_SUBMIT_ID = "edit-submit"
+
+SET_RASP_HTML_SCRIPT = """
+const textarea = arguments[0];
+const html = arguments[1];
+const editor = window.tinyMCE && (
+    window.tinyMCE.get && window.tinyMCE.get(textarea.id)
+    || window.tinyMCE.getInstanceById
+        && window.tinyMCE.getInstanceById(textarea.id)
+);
+
+if (editor) {
+    editor.setContent(html);
+    editor.save();
+} else {
+    textarea.value = html;
+}
+
+textarea.setAttribute("data-wysiwyg-value-is-changed", "true");
+textarea.dispatchEvent(new Event("input", { bubbles: true }));
+textarea.dispatchEvent(new Event("change", { bubbles: true }));
+"""
 
 
 class title_not_contains:  # noqa:N801
@@ -113,7 +135,6 @@ def load_jpegs_to_site(*, driver: WebDriver, jpegs: list[Path]) -> None:
     """You must be logged in before uploading!"""
     wait = WebDriverWait(driver, config.web_driver_wait)
     for file_path in jpegs:
-        filename = file_path.name
         driver.get(config.site_login_url)
         sleep(1)
         driver.get(config.site_filebrowser_url)
@@ -124,7 +145,6 @@ def load_jpegs_to_site(*, driver: WebDriver, jpegs: list[Path]) -> None:
         file_load_input.send_keys(str(file_path))
         wait.until(EC.presence_of_element_located((By.ID, "edit-upload")))
         driver.find_element(By.ID, "edit-upload").click()
-        # _ = wait.until(EC.presence_of_element_located((By.ID, filename)))
         sleep(1)
     sleep(1)
 
@@ -139,16 +159,15 @@ def create_rasp_html(jpegs: list[Path]) -> HtmlT:
 
 def update_rasp(driver: WebDriver, html: HtmlT) -> None:
     driver.get(config.site_rasp_url)
-    # Раньше эта строчка работала, потом стала
-    #  выдавать ошибку драйвера Selenium
-    # driver.find_element(By.ID, "wysiwyg-toggle-edit-body-und-0-value").click()  # noqa:ERA001,E501
+    wait = WebDriverWait(driver, config.web_driver_wait)
+    body_field = wait.until(
+        EC.presence_of_element_located((By.ID, RASP_BODY_FIELD_ID)),
+    )
     log.info("Send rasp html:")
     print(html)
-    driver.find_element(By.ID, "edit-body-und-0-value").clear()
-    driver.find_element(By.ID, "edit-body-und-0-value").send_keys(html)
-    driver.find_element(By.ID, "edit-submit").click()
+    driver.execute_script(SET_RASP_HTML_SCRIPT, body_field, html)
+    wait.until(EC.element_to_be_clickable((By.ID, RASP_SUBMIT_ID))).click()
 
-    wait = WebDriverWait(driver, config.web_driver_wait)
     wait.until(title_not_contains("Редактирование"))
     sleep(1)
 
