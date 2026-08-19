@@ -15,7 +15,7 @@ from telegram.ext import (
 from autopublisher.config import TELEGRAM_API_MESSAGE_LIMIT, config
 from autopublisher.mail import maildriver
 from autopublisher.publish import prepare, publish
-from autopublisher.utils.telegram import owner_only
+from autopublisher.utils.telegram import owner_only, send_message
 
 
 log = logging.getLogger(__name__)
@@ -59,13 +59,14 @@ async def catch_error(
 ) -> int:
     log.exception(exc)
     tbc = traceback.format_exc()
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text="Произошла ошибка!",
     )
     if len(tbc) > TELEGRAM_API_MESSAGE_LIMIT:
         tbc = tbc[-TELEGRAM_API_MESSAGE_LIMIT:]
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=tbc)
+    await send_message(context, chat_id=update.effective_chat.id, text=tbc)
     mail = current_mail.get()
     if mail:
         mail.rollback()
@@ -87,7 +88,8 @@ async def check_mail(
          InlineKeyboardButton("Cancel", callback_data=str(CANCEL))],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id, text="Проверяю почту...",
     )
     mail_id, mail_folder, mail_metadata = maildriver.load_most_old_mail_from(
@@ -95,7 +97,8 @@ async def check_mail(
     )
     logging.info("Sending request to get mail from %s", mail_from)
     if mail_id is None:
-        await context.bot.send_message(
+        await send_message(
+            context,
             chat_id=update.effective_chat.id,
             text=f"Новых писем от {name_for_msg} нет!",
         )
@@ -120,10 +123,12 @@ async def check_mail(
         mail_metadata=mail_metadata,
     )
     current_mail.set(mail)
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id, text="Есть письмо",
     )
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text=mail.about,
         reply_markup=reply_markup,
@@ -157,7 +162,8 @@ async def news(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         title, news_sentences = maildriver.get_text_for_news(mail)
         mail.title, mail.sentences = title, news_sentences
     text_to_show = "<" + ">\n<".join(mail.sentences) + ">"
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text=f"Title: {mail.title}",
     )
@@ -168,7 +174,8 @@ async def news(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
          InlineKeyboardButton("Cancel", callback_data=str(CANCEL))],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text=text_to_show,
         reply_markup=reply_markup,
@@ -195,7 +202,8 @@ async def news_prepare(
          InlineKeyboardButton("Cancel", callback_data=str(NO))],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text=imgs,
         reply_markup=reply_markup,
@@ -206,7 +214,8 @@ async def news_prepare(
 async def edit_wait(
         update: Update, context: ContextTypes.DEFAULT_TYPE,
 ) -> int:
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id, text="Кидай текст",
     )
     return TEXT
@@ -228,7 +237,8 @@ async def edit_save(
 async def edit_title_wait(
         update: Update, context: ContextTypes.DEFAULT_TYPE,
 ) -> int:
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id, text="Новый заголовок новости:",
     )
     return TITLE
@@ -245,13 +255,15 @@ async def edit_title_save(
 
 
 async def rasp(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text="Подготовка...",
     )
     mail = get_unwrapped_current_mail()
     rasp_images = prepare.rasp(mail.folder)
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text="Публикуем расписание",
     )
@@ -259,11 +271,12 @@ async def rasp(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         url = publish.rasp(rasp_images)
     except Exception as e:
         return await catch_error(update=update, context=context, exc=e)
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text="Опубликовано!",
     )
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=url)
+    await send_message(context, chat_id=update.effective_chat.id, text=url)
     current_mail_clear()
     return ConversationHandler.END
 
@@ -273,7 +286,8 @@ async def publish_news(
 ) -> int:
     mail = get_unwrapped_current_mail()
     if not mail.title:
-        await context.bot.send_message(
+        await send_message(
+            context,
             chat_id=update.effective_chat.id,
             text="Ошибка: заголовок новости отсутствует",
         )
@@ -281,7 +295,8 @@ async def publish_news(
         return ConversationHandler.END
 
     html = prepare.html_from_sentences(mail.sentences)
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text="Публикуем",
     )
@@ -289,18 +304,20 @@ async def publish_news(
         url = publish.news(mail.title, html, mail.images)
     except Exception as e:
         return await catch_error(update=update, context=context, exc=e)
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text="Опубликовано!",
     )
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=url)
+    await send_message(context, chat_id=update.effective_chat.id, text=url)
     current_mail_clear()
     return ConversationHandler.END
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     current_mail_rollback()
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text="Отмена",
     )
@@ -308,7 +325,8 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text=f"Fallback echo\n{update.message.text}",
     )

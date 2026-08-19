@@ -1,12 +1,13 @@
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes
 
-from autopublisher.utils.telegram import owner_only
+from autopublisher.utils.telegram import owner_only, send_message
 
 
 @owner_only
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text="Привет, хозяин!",
     )

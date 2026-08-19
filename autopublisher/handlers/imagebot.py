@@ -15,7 +15,7 @@ from autopublisher.documents.image import Image
 from autopublisher.handlers.mailbot import TEXT, catch_error, echo
 from autopublisher.publish.publish import mainpage
 from autopublisher.utils.dateparse import add_date
-from autopublisher.utils.telegram import owner_only
+from autopublisher.utils.telegram import owner_only, send_message
 
 
 log = logging.getLogger(__name__)
@@ -32,7 +32,8 @@ async def edit_save(
     if image is None:
         raise RuntimeError("Current Image is None")
     text = update.message.text
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text=f"Понятно, {text}",
     )
@@ -41,21 +42,25 @@ async def edit_save(
         if not image.end_date:
             raise ValueError("No one regexp in text was found")  # noqa:TRY301
     except Exception as e:
-        await context.bot.send_message(
+        await send_message(
+            context,
             chat_id=update.effective_chat.id,
             text="Неизвестная дата или интервал:",
         )
-        await context.bot.send_message(
+        await send_message(
+            context,
             chat_id=update.effective_chat.id,
             text=str(e),
         )
         return TEXT
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text=f"START DATE: {image.start_date_iso}, "
              f"END DATE: {image.end_date_iso}",
     )
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text="Загружаем...",
     )
@@ -63,7 +68,8 @@ async def edit_save(
         mainpage(image)
     except Exception as e:
         return await catch_error(update=update, context=context, exc=e)
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text="Готово!",
     )
@@ -84,14 +90,16 @@ async def image_loader(
     file_id = update.message.document.file_id
     image_file = await context.bot.get_file(file_id)
     image = await Image.from_telegram_file(image_file)
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text=f"Загружен файл: {image.magic_text}",
     )
     allowed_image_types = {"JPEG", "PNG"}
     if image.type not in allowed_image_types:
         allowed_types_str = ", ".join(allowed_image_types)
-        await context.bot.send_message(
+        await send_message(
+            context,
             chat_id=update.effective_chat.id,
             text=f"Неподдерживаемый тип изображения. "
                  f"Поддерживаемые типы: {allowed_types_str}. Отмена.",
@@ -99,7 +107,8 @@ async def image_loader(
         return ConversationHandler.END
 
     current_image.set(image)
-    await context.bot.send_message(
+    await send_message(
+        context,
         chat_id=update.effective_chat.id,
         text="До какой даты или на какой срок сохранить картинку?",
     )
