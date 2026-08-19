@@ -22,9 +22,14 @@ log = logging.getLogger(__name__)
 display: ContextVar[Display | None] = ContextVar("display", default=None)
 
 
-JPEG_TEMPLATE = """<!-- MAINPAGE JPEG -->
-<!-- START DATE: {start_date}, END DATE: {end_date} -->
-<h2><center><img src="{jpeg}" alt="" width="600" /></center></h2>
+JPEG_TEMPLATE_HEADER = """<!-- MAINPAGE JPEG -->
+<!-- START DATE: {start_date}, END DATE: {end_date} -->"""
+JPEG_TEMPLATE_BODY = (
+    """<h2><center><img src="{jpeg}" alt="" width="600" /></center></h2>"""
+)
+JPEG_TEMPLATE_LINK = """<a href="{link}" target="_blank">"""
+JPEG_TEMPLATE_LINK_CLOSE = "</a>"
+JPEG_TEMPLATE_FOOTER = """
 <!-- END OF MAINPAGE JPEG -->
 
 """
@@ -183,6 +188,49 @@ def rasp(jpegs: list[Path]) -> str:
     return url
 
 
+def get_mainpage_internal_link_hosts() -> tuple[str, ...]:
+    host = config.site_url.host
+    if host is None:
+        return ()
+    host = host.strip().strip(",/")
+    if not host:
+        return ()
+    if host.startswith("www."):
+        return host, host.removeprefix("www.")
+    return host, f"www.{host}"
+
+
+def normalize_mainpage_link(link: str) -> str:
+    link = link.strip()
+    for host in get_mainpage_internal_link_hosts():
+        if link == host:
+            return "/"
+        if link.startswith(f"{host}/"):
+            return f"/{link.removeprefix(host).lstrip('/')}"
+    return link
+
+
+def create_mainpage_jpeg_html(image: Image) -> HtmlT:
+    html_items = [
+        JPEG_TEMPLATE_HEADER.format(
+            start_date=image.start_date_iso,
+            end_date=image.end_date_iso,
+        ),
+    ]
+    if image.link:
+        html_items.append(
+            JPEG_TEMPLATE_LINK.format(
+                link=normalize_mainpage_link(image.link),
+            ),
+        )
+    html_items.append(
+        JPEG_TEMPLATE_BODY.format(jpeg=f"/sites/default/files/{image.name}"),
+    )
+    if image.link:
+        html_items.append(JPEG_TEMPLATE_LINK_CLOSE)
+    return "\n".join(html_items) + JPEG_TEMPLATE_FOOTER
+
+
 def news(title: str, html: HtmlT, jpegs: list[Path]) -> str:
     print("Load News title:")  # noqa: T201
     print(title)  # noqa: T201
@@ -245,11 +293,7 @@ def mainpage(image: Image) -> str:
     wait.until(EC.presence_of_element_located((By.ID, "edit-submit")))
     text_area = driver.find_element(By.ID, "edit-body-und-0-value")
     text = text_area.text
-    jpeg_html = JPEG_TEMPLATE.format(
-        start_date=image.start_date_iso,
-        end_date=image.end_date_iso,
-        jpeg=f"/sites/default/files/{image.name}",
-    )
+    jpeg_html = create_mainpage_jpeg_html(image)
     html = jpeg_html + text
     text_area.clear()
     text_area.send_keys(html)

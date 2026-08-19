@@ -106,6 +106,7 @@ class Image:
     folder: Path
     start_date: datetime.date  # type: ignore[valid-type]
     end_date: "datetime.date | None" = None  # type: ignore[valid-type]
+    link: str | None = None
 
     @property
     def path(self) -> Path:
