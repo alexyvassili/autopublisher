@@ -164,7 +164,7 @@ def update_rasp(driver: WebDriver, html: HtmlT) -> None:
         EC.presence_of_element_located((By.ID, RASP_BODY_FIELD_ID)),
     )
     log.info("Send rasp html:")
-    print(html)
+    print(html)  # noqa: T201
     driver.execute_script(SET_RASP_HTML_SCRIPT, body_field, html)
     wait.until(EC.element_to_be_clickable((By.ID, RASP_SUBMIT_ID))).click()
 
@@ -184,16 +184,16 @@ def rasp(jpegs: list[Path]) -> str:
 
 
 def news(title: str, html: HtmlT, jpegs: list[Path]) -> str:
-    print("Load News title:")
-    print(title)
-    print()
-    print("Load News HTML:")
-    print(html)
-    print()
-    print("Jpegs:")
+    print("Load News title:")  # noqa: T201
+    print(title)  # noqa: T201
+    print()  # noqa: T201
+    print("Load News HTML:")  # noqa: T201
+    print(html)  # noqa: T201
+    print()  # noqa: T201
+    print("Jpegs:")  # noqa: T201
     for jpeg in jpegs:
-        print(jpeg)
-    print()
+        print(jpeg)  # noqa: T201
+    print()  # noqa: T201
     driver: WebDriver = login_to_site()
     wait = WebDriverWait(driver, config.web_driver_wait)
     log.info("Open site news url")
@@ -201,16 +201,20 @@ def news(title: str, html: HtmlT, jpegs: list[Path]) -> str:
     log.info("Edit title")
     wait.until(EC.presence_of_element_located((By.ID, "edit-title")))
     driver.find_element(By.ID, "edit-title").send_keys(title)
-    wait.until(EC.presence_of_element_located((By.ID, "wysiwyg-toggle-edit-body-und-0-value")))
+    wait.until(
+        EC.presence_of_element_located(
+            (By.ID, "wysiwyg-toggle-edit-body-und-0-value"),
+        ),
+    )
     driver.find_element(By.ID, "wysiwyg-toggle-edit-body-und-0-value").click()
-    log.info('Send html')
+    log.info("Send html")
     wait.until(EC.presence_of_element_located((By.ID, "edit-body-und-0-value")))
     driver.find_element(By.ID, "edit-body-und-0-value").send_keys(html)
 
     file_uploader_id = "edit-field-image-und-{}-upload"
     file_uploader_btn = "edit-field-image-und-{}-upload-button"
 
-    log.info('Uploading images')
+    log.info("Uploading images")
     for j, filename in enumerate(jpegs):
         driver.find_element(
             By.ID, file_uploader_id.format(j),
@@ -222,14 +226,14 @@ def news(title: str, html: HtmlT, jpegs: list[Path]) -> str:
             (By.ID, file_uploader_id.format(j + 1)),
         ))
 
-    log.info('Edit submit')
+    log.info("Edit submit")
     driver.find_element(By.ID, "edit-submit").click()
 
     wait.until(title_not_contains("Создание материала"))
     sleep(1)
     url = driver.current_url
     close_driver(driver)
-    log.info('Done. News page: %s', url)
+    log.info("Done. News page: %s", url)
     return url
 
 
