@@ -3,7 +3,7 @@ Source: imagemagick
 Version: 7.1.1-27
 Architecture: amd64
 Maintainer: ImageMagick Packaging Team <pkg-gmagick-im-team@lists.alioth.debian.org>
-Depends: libc6 (>= 2.35), libdjvulibre21, libgs10, libheif1, libjxl0.9, liblqr-1-0, libopenexr-3-1-30, libpangocairo-1.0-0, libraqm0, libraw-bin, libraw23, librsvg2-2, librsvg2-bin, libwebpdemux2, libwebpmux3, libwmflite-0.2-7, libzip4, hicolor-icon-theme
+Depends: libc6 (>= 2.35), libdjvulibre21, libgs10, libheif1, libjxl0.7, liblqr-1-0, libopenexr-3-1-30, libpangocairo-1.0-0, libraqm0, libraw-bin, libraw20, librsvg2-2, librsvg2-bin, libwebpdemux2, libwebpmux3, libwmflite-0.2-7, libzip4, hicolor-icon-theme
 Recommends: ghostscript, netpbm
 Suggests: autotrace, cups-bsd | lpr | lprng, curl, enscript, ffmpeg, gimp, gnuplot, grads, graphviz, groff-base, hp2xx, html2ps, libwmf-bin, mplayer, povray, radiance, sane-utils, texlive-base-bin, transfig, libraw-bin, xdg-utils
 Breaks: libmagickcore-dev (<< 8:6.9.2.10+dfsg-2~)
